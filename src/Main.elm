@@ -1,7 +1,7 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (Html, button, h1, text, div)
+import Html exposing (button, h1, text, div)
 import Html.Events exposing (onClick)
 import Http exposing (post, send, jsonBody)
 import Json.Decode exposing (Decoder (..), field, string)
@@ -9,7 +9,7 @@ import Json.Encode as E
 import GlobalState exposing (..)
 
 main =
-  Browser.element {
+  Browser.document {
       init = init
       , update = update
       , view = view
@@ -44,9 +44,14 @@ update msg state =
                 Ok res -> (state, Cmd.none)
                 Err httpError -> (state, Cmd.none)
 
-view : GlobalState -> Html LoginMsg
+view : GlobalState -> Browser.Document LoginMsg
 view model =
-    div [] [
-        h1 [] [text "App"]
-        , button [onClick SendLogin] [text "Login"]
+  {
+    title = "Sermo"
+    , body = [
+        div [] [
+          h1 [] [text "App"]
+          , button [onClick SendLogin] [text "Login"]
+        ]
     ]
+  }
