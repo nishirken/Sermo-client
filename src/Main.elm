@@ -3,7 +3,7 @@ module Main exposing (..)
 import Browser
 import Html exposing (Html, button, h1, text, div)
 import Html.Events exposing (onClick)
-import Http exposing (header, post, send, getString, jsonBody)
+import Http exposing (post, send, jsonBody)
 import Json.Decode exposing (Decoder (..), field, string)
 import Json.Encode as E
 import GlobalState exposing (..)
@@ -27,9 +27,9 @@ type LoginMsg
     | DataReseived (Result Http.Error String)
 
 type alias LoginRequest =
-    { 
+    {
         email : String
-        , password : String 
+        , password : String
     }
 
 loginDecoder = field "token" string
@@ -47,6 +47,6 @@ update msg state =
 view : GlobalState -> Html LoginMsg
 view model =
     div [] [
-        h1 [] [text "Application"]
+        h1 [] [text "App"]
         , button [onClick SendLogin] [text "Login"]
     ]
