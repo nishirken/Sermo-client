@@ -1,57 +1,86 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (button, h1, text, div)
-import Html.Events exposing (onClick)
-import Http exposing (post, send, jsonBody)
-import Json.Decode exposing (Decoder (..), field, string)
-import Json.Encode as E
+import Browser.Navigation as Nav
+import Url.Parser exposing (Parser, oneOf, map, s)
+import Html exposing (text, h1, div)
+import Html.Attributes exposing (href)
 import GlobalState exposing (..)
+import Url.Parser exposing (Parser, parse, map, oneOf, top, s)
+import Url
+import SwitchButtons exposing (switchButtonsView)
+import Common exposing (Route (..))
+import InForm
 
-main =
-  Browser.document {
-      init = init
-      , update = update
-      , view = view
-      , subscriptions = subscriptions
-      }
+type alias Model =
+  { key : Nav.Key
+  , url: Url.Url
+  , route: Route
+  , formModel : InForm.Model
+  }
 
-init : () -> (GlobalState, Cmd LoginMsg)
-init _ = (GlobalState "", Cmd.none)
+type Msg
+  = LinkClicked Browser.UrlRequest
+  | UrlChanged Url.Url
+  | FormMsg InForm.Msg
 
-subscriptions : GlobalState -> Sub LoginMsg
-subscriptions model = Sub.none
+main = Browser.application
+  { init = init
+  , update = update
+  , view = view
+  , subscriptions = \_ -> Sub.none
+  , onUrlRequest = LinkClicked
+  , onUrlChange = UrlChanged
+  }
 
-type LoginMsg
-    = SendLogin
-    | DataReseived (Result Http.Error String)
-
-type alias LoginRequest =
-    {
-        email : String
-        , password : String
+init : () -> Url.Url -> Nav.Key -> (Model, Cmd Msg)
+init _ url key =
+  (
+    { url = url
+    , key = key
+    , route = Login
+    , formModel = InForm.initialModel
     }
+  , Cmd.none
+  )
 
-loginDecoder = field "token" string
-loginRequest = jsonBody (E.object [("email", E.string "mail@gmail.com"), ("password", E.string "123456")])
+update : Msg -> Model -> (Model, Cmd Msg)
+update msg model =
+  case msg of
+    LinkClicked urlRequest ->
+      case urlRequest of
+        Browser.Internal url ->
+          (model, Nav.pushUrl model.key (Url.toString url))
+        Browser.External href ->
+          (model, Nav.load href)
+    UrlChanged url ->
+      ({ model | url = url, route = toRoute url }, Cmd.none)
+    FormMsg subMsg -> let (updatedFormModel, formCmd) = InForm.update subMsg model.formModel in
+      ({ model | formModel = updatedFormModel }, Cmd.map FormMsg formCmd)
 
-update : LoginMsg -> GlobalState -> (GlobalState, Cmd LoginMsg)
-update msg state =
-    case msg of
-        SendLogin -> (state, send DataReseived (post "http://localhost:8080/login" loginRequest loginDecoder))
-        DataReseived result ->
-            case result of
-                Ok res -> (state, Cmd.none)
-                Err httpError -> (state, Cmd.none)
+matchRoute : Parser (Route -> a) a
+matchRoute =
+  oneOf
+    [ map Signin (s "signin")
+    , map Login (s "login")
+    , map Application top
+    ]
 
-view : GlobalState -> Browser.Document LoginMsg
+toRoute : Url.Url -> Route
+toRoute url = Maybe.withDefault NotFound (parse matchRoute url)
+
+view : Model -> Browser.Document Msg
 view model =
   {
-    title = "Sermo"
+    title = "Application"
     , body = [
-        div [] [
-          h1 [] [text "App"]
-          , button [onClick SendLogin] [text "Login"]
+        switchButtonsView
+        , div [] [
+          case model.route of
+            Signin -> Html.map FormMsg (InForm.signinFormView model.formModel)
+            Login -> Html.map FormMsg (InForm.loginFormView model.formModel)
+            Application -> div [] [text "Application"]
+            NotFound -> div [] [text "404 Not found"]  
         ]
     ]
   }
