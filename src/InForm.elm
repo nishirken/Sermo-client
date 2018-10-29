@@ -8,7 +8,8 @@ import Http exposing (post, send, jsonBody)
 import Json.Decode exposing (Decoder (..), field, string)
 import Json.Encode as E
 import GlobalState exposing (..)
-import Common exposing (Route (..))
+import Common exposing (Route (..), testAttr)
+import String exposing (toLower)
 
 loginForm = Browser.element
   { init = \_ -> (initialModel, Cmd.none)
@@ -52,10 +53,10 @@ update msg model =
                 Ok res -> (model, Cmd.none)
                 Err httpError -> (model, Cmd.none)
 
-formInput : String -> String -> (String -> msg) -> Html msg
-formInput p v toMsg =
+formInput : String -> String -> String -> (String -> msg) -> Html msg
+formInput attr p v toMsg =
     input
-    [A.type_ "text", onInput toMsg, A.placeholder p, A.required True, A.value v]
+    [A.type_ "text", onInput toMsg, A.placeholder p, A.required True, A.value v, testAttr (attr ++ p)]
     []
 
 formText : Route -> String
@@ -74,13 +75,15 @@ toSend route =
 
 inFormView : Model -> Route -> Html Msg
 inFormView model route =
-  let t = (text << formText) route in
-    div [] [
-        h3 [] [t]
-        , formInput "email" model.email Email
-        , formInput "password" model.password Password
-        , button [onClick ((Send << toSend) route)] [t]
-    ]
+  let
+    t = (text << formText) route
+    attr = (toLower << formText) route in
+      div [testAttr (attr ++ "-page")] [
+          h3 [] [t]
+          , formInput attr "email" model.email Email
+          , formInput attr "password" model.password Password
+          , button [onClick ((Send << toSend) route), testAttr (attr ++ "submit")] [t]
+      ]
 
 loginFormView : Model -> Html Msg
 loginFormView model = inFormView model Login
