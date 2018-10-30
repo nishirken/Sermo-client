@@ -5,7 +5,6 @@ import Browser.Navigation as Nav
 import Url.Parser exposing (Parser, oneOf, map, s)
 import Html exposing (text, h1, div)
 import Html.Attributes exposing (href)
-import GlobalState exposing (..)
 import Url.Parser exposing (Parser, parse, map, oneOf, top, s)
 import Url
 import SwitchButtons exposing (switchButtonsView)
@@ -16,6 +15,7 @@ type alias Model =
   { key : Nav.Key
   , url: Url.Url
   , route: Route
+  , authToken: String
   , formModel : InForm.Model
   }
 
@@ -40,6 +40,7 @@ init _ url key =
     , key = key
     , route = Login
     , formModel = InForm.initialModel
+    , authToken = ""
     }
   , Cmd.none
   )

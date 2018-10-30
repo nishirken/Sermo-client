@@ -7,7 +7,6 @@ import Html.Events exposing (onClick, onInput)
 import Http exposing (post, send, jsonBody)
 import Json.Decode exposing (Decoder (..), field, string)
 import Json.Encode as E
-import GlobalState exposing (..)
 import Common exposing (Route (..), testAttr)
 import String exposing (toLower)
 
