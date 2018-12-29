@@ -8,26 +8,24 @@ import Html.Attributes exposing (href)
 import Url.Parser exposing (Parser, parse, map, oneOf, top, s)
 import Url
 import SwitchButtons exposing (switchButtonsView)
-import Common exposing (Route (..))
 import InForm
+import Common exposing (Route (..))
 import Application
-
-type Route
-  = NotFound
-  | LogIn InForm.Model
-  | LogOut InForm.Model
-  | Application Application.Model
 
 type alias Model =
   { key : Nav.Key
-  , url: Url.Url
-  , route: Route
+  , url : Url.Url
+  , route : Route
+  , loginModel : InForm.Model
+  , signinModel : InForm.Model
+  , appModel : Application.Model
   }
 
 type Msg
   = LinkClicked Browser.UrlRequest
   | UrlChanged Url.Url
-  | FormMsg InForm.Msg
+  | LoginMsg InForm.LoginMsg
+  | SigninMsg InForm.SigninMsg
   | AppMsg Application.Msg
 
 main = Browser.application
@@ -45,7 +43,9 @@ init _ url key =
     { url = url
     , key = key
     , route = Login
-    , formModel = InForm.initialModel
+    , loginModel = InForm.initialModel
+    , singinModel = InForm.initialModel
+    , appModel = Application.initialModel
     }
   , Cmd.none
   )
@@ -59,10 +59,13 @@ update msg model =
           (model, Nav.pushUrl model.key (Url.toString url))
         Browser.External href ->
           (model, Nav.load href)
-    UrlChanged url ->
-      ({ model | url = url, route = toRoute url }, Cmd.none)
-    FormMsg subMsg -> let (updatedFormModel, formCmd) = InForm.update subMsg model.formModel in
-      ({ model | formModel = updatedFormModel }, Cmd.map FormMsg formCmd)
+    UrlChanged url -> (
+      { model
+      | url = url
+      , route = toRoute url
+      },
+      Cmd.none
+      )
 
 matchRoute : Parser (Route -> a) a
 matchRoute =
@@ -83,9 +86,9 @@ view model =
         switchButtonsView
         , div [] [
           case model.route of
-            Signin -> Html.map FormMsg (InForm.signinFormView model.formModel)
-            Login -> Html.map FormMsg (InForm.loginFormView model.formModel)
-            Application -> div [] [text "Application"]
+            Signin -> Html.map SigninMsg (InForm.signinFormView model.signinModel)
+            Login -> Html.map LoginMsg (InForm.loginFormView model.loginModel)
+            Application -> Html.map AppMsg (Application.view model.appModel)
             NotFound -> div [] [text "404 Not found"]  
         ]
     ]

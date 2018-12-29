@@ -7,27 +7,28 @@ import Html.Events exposing (onClick, onInput)
 import Http exposing (post, send, jsonBody)
 import Json.Decode exposing (Decoder (..), field, string)
 import Json.Encode as E
-import Common exposing (Route (..))
+import Common exposing (Route (..), errorMessage)
 
 loginForm = Browser.element
   { init = \_ -> initialModel
-  , update = update
+  , update = updateLogin
   , view = loginFormView
   , subscriptions = \_ -> Sub.none
   }
 
 signinForm = Browser.element
   { init = \_ -> initialModel
-  , update = update
+  , update = updateSignin
   , view = signinFormView
   , subscriptions = \_ -> Sub.none
   }
 
-initialModel = (Model "" "", Cmd.none)
+initialModel = (Model "" "" "", Cmd.none)
 
 type alias Model =
   { email : String
   , password : String
+  , error : String
   }
 
 type Msg
@@ -36,20 +37,34 @@ type Msg
   | Password String
   | DataReseived (Result Http.Error String)
 
+type alias SigninMsg = Msg
+type alias LoginMsg = Msg
+
 loginDecoder = field "token" string
 loginRequest { email, password } =
   jsonBody (E.object [("email", E.string email), ("password", E.string password)])
 
-update : Msg -> Model -> (Model, Cmd Msg)
-update msg model =
+updateLogin : LoginMsg -> Model -> (Model, Cmd LoginMsg)
+updateLogin msg model =
   case msg of
     Email email -> ({ model | email = email }, Cmd.none)
     Password password -> ({ model | password = password }, Cmd.none)
-    Send to -> (model, send DataReseived (post ("http://localhost:8080/" ++ to) (loginRequest model) loginDecoder))
+    Send to -> (model, send DataReseived (post ("http://localhost:8080/login") (loginRequest model) loginDecoder))
     DataReseived result ->
       case result of
         Ok res -> (model, Cmd.none)
-        Err httpError -> (model, Cmd.none)
+        Err httpError -> ({ model | error = errorMessage httpError }, Cmd.none)
+
+updateSignin : SigninMsg -> Model -> (Model, Cmd SigninMsg)
+updateSignin msg model =
+  case msg of
+    Email email -> ({ model | email = email }, Cmd.none)
+    Password password -> ({ model | password = password }, Cmd.none)
+    Send to -> (model, send DataReseived (post ("http://localhost:8080/signin") (loginRequest model) loginDecoder))
+    DataReseived result ->
+      case result of
+        Ok res -> (model, Cmd.none)
+        Err httpError -> ({ model | error = errorMessage httpError }, Cmd.none)
 
 formInput : String -> String -> (String -> msg) -> Html msg
 formInput p v toMsg =
