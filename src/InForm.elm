@@ -7,7 +7,6 @@ import Html.Events exposing (onClick, onInput)
 import Http exposing (post, send, jsonBody)
 import Json.Decode exposing (Decoder (..), field, string)
 import Json.Encode as E
-import GlobalState exposing (..)
 import Common exposing (Route (..))
 
 loginForm = Browser.element
@@ -39,24 +38,24 @@ type Msg
 
 loginDecoder = field "token" string
 loginRequest { email, password } =
-    jsonBody (E.object [("email", E.string email), ("password", E.string password)])
+  jsonBody (E.object [("email", E.string email), ("password", E.string password)])
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
-    case msg of
-        Email email -> ({ model | email = email }, Cmd.none)
-        Password password -> ({ model | password = password }, Cmd.none)
-        Send to -> (model, send DataReseived (post ("http://localhost:8080/" ++ to) (loginRequest model) loginDecoder))
-        DataReseived result ->
-            case result of
-                Ok res -> (model, Cmd.none)
-                Err httpError -> (model, Cmd.none)
+  case msg of
+    Email email -> ({ model | email = email }, Cmd.none)
+    Password password -> ({ model | password = password }, Cmd.none)
+    Send to -> (model, send DataReseived (post ("http://localhost:8080/" ++ to) (loginRequest model) loginDecoder))
+    DataReseived result ->
+      case result of
+        Ok res -> (model, Cmd.none)
+        Err httpError -> (model, Cmd.none)
 
 formInput : String -> String -> (String -> msg) -> Html msg
 formInput p v toMsg =
-    input
-    [A.type_ "text", onInput toMsg, A.placeholder p, A.required True, A.value v]
-    []
+  input
+  [A.type_ "text", onInput toMsg, A.placeholder p, A.required True, A.value v]
+  []
 
 formText : Route -> String
 formText route =

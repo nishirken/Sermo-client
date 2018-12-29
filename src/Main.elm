@@ -5,24 +5,30 @@ import Browser.Navigation as Nav
 import Url.Parser exposing (Parser, oneOf, map, s)
 import Html exposing (text, h1, div)
 import Html.Attributes exposing (href)
-import GlobalState exposing (..)
 import Url.Parser exposing (Parser, parse, map, oneOf, top, s)
 import Url
 import SwitchButtons exposing (switchButtonsView)
 import Common exposing (Route (..))
 import InForm
+import Application
+
+type Route
+  = NotFound
+  | LogIn InForm.Model
+  | LogOut InForm.Model
+  | Application Application.Model
 
 type alias Model =
   { key : Nav.Key
   , url: Url.Url
   , route: Route
-  , formModel : (InForm.Model, Cmd InForm.Msg)
   }
 
 type Msg
   = LinkClicked Browser.UrlRequest
   | UrlChanged Url.Url
   | FormMsg InForm.Msg
+  | AppMsg Application.Msg
 
 main = Browser.application
   { init = init
