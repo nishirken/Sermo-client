@@ -1,29 +1,26 @@
 module Main exposing (..)
 
 import Browser
-import Browser.Navigation as Nav
-import Url.Parser exposing (Parser, oneOf, map, s)
 import Html exposing (text, h1, div)
 import Html.Attributes exposing (href)
-import Url.Parser exposing (Parser, parse, map, oneOf, top, s)
-import Url
 import SwitchButtons exposing (switchButtonsView)
 import InForm
-import Common exposing (Route (..))
+import Common
 import Application
+import Routes
+import Url exposing (Url)
+import Browser.Navigation exposing (Key)
 
 type alias Model =
-  { key : Nav.Key
-  , url : Url.Url
-  , route : Route
+  { token : String
+  , routesModel : Routes.Model
   , loginModel : InForm.Model
   , signinModel : InForm.Model
   , appModel : Application.Model
   }
 
 type Msg
-  = LinkClicked Browser.UrlRequest
-  | UrlChanged Url.Url
+  = RouteMsg Routes.Msg
   | LoginMsg InForm.LoginMsg
   | SigninMsg InForm.SigninMsg
   | AppMsg Application.Msg
@@ -33,63 +30,75 @@ main = Browser.application
   , update = update
   , view = view
   , subscriptions = \_ -> Sub.none
-  , onUrlRequest = LinkClicked
-  , onUrlChange = UrlChanged
+  , onUrlRequest = \urlReq -> RouteMsg (Routes.LinkClicked urlReq)
+  , onUrlChange = \url -> RouteMsg (Routes.UrlChanged url)
   }
 
-init : () -> Url.Url -> Nav.Key -> (Model, Cmd Msg)
+init : () -> Url -> Key -> (Model, Cmd Msg)
 init _ url key =
-  (
-    { url = url
-    , key = key
-    , route = Login
-    , loginModel = InForm.initialModel
-    , singinModel = InForm.initialModel
-    , appModel = Application.initialModel
-    }
-  , Cmd.none
-  )
+  ({ token = ""
+  , routesModel = Routes.initialModel url key
+  , loginModel = InForm.initialModel
+  , signinModel = InForm.initialModel
+  , appModel = Application.initialModel
+  }, Cmd.none)
+
+updateInnerMsg : Msg -> Model -> (Model, Cmd Msg)
+updateInnerMsg msg model =
+  case msg of
+    RouteMsg subMsg -> let (updatedModel, updatedCmd) = Routes.update subMsg model.routesModel in
+      ({ model | routesModel = updatedModel }, Cmd.map RouteMsg updatedCmd)
+    SigninMsg subMsg -> let (updatedModel, subCmd) = InForm.updateSignin subMsg model.signinModel in
+      ({ model | signinModel = updatedModel }, Cmd.map SigninMsg subCmd)
+    LoginMsg subMsg -> let (updatedModel, subCmd) = InForm.updateLogin subMsg model.loginModel in
+      ({ model | loginModel = updatedModel }, Cmd.map LoginMsg subCmd)
+    AppMsg subMsg -> let (updatedModel, subCmd) = Application.update subMsg model.appModel in
+      ({ model | appModel = updatedModel }, Cmd.map AppMsg subCmd)
+
+updateOutModel : Common.GlobalMsg -> Model -> Model
+updateOutModel globalMsg model =
+  case globalMsg of
+    (Common.LoginSuccess token) -> { model | token = token }
+    _ -> model
+
+updateOutCmd : Common.GlobalMsg -> Model -> Cmd Msg
+updateOutCmd msg model = Cmd.batch
+  [Cmd.map RouteMsg (Routes.updateOutCmd msg model.routesModel)]
+
+updateOutMsg : Msg -> Model -> (Model, Cmd Msg)
+updateOutMsg msg model =
+  case msg of
+    (LoginMsg subMsg) ->
+      let
+        msg_ = InForm.outLoginMsg subMsg
+        model_ = updateOutModel msg_ model in
+      (model_, updateOutCmd msg_ model_)
+    (SigninMsg subMsg) ->
+      let
+        msg_ = InForm.outSigninMsg subMsg
+        model_ = updateOutModel msg_ model in
+      (model_, updateOutCmd msg_ model_)
+    _ -> (model, Cmd.none)
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
-  case msg of
-    LinkClicked urlRequest ->
-      case urlRequest of
-        Browser.Internal url ->
-          (model, Nav.pushUrl model.key (Url.toString url))
-        Browser.External href ->
-          (model, Nav.load href)
-    UrlChanged url -> (
-      { model
-      | url = url
-      , route = toRoute url
-      },
-      Cmd.none
-      )
-
-matchRoute : Parser (Route -> a) a
-matchRoute =
-  oneOf
-    [ map Signin (s "signin")
-    , map Login (s "login")
-    , map Application top
-    ]
-
-toRoute : Url.Url -> Route
-toRoute url = Maybe.withDefault NotFound (parse matchRoute url)
+  let
+    (innerModel, innerCmd) = updateInnerMsg msg model
+    (outModel, outCmd) = updateOutMsg msg innerModel in
+      (outModel, Cmd.batch [outCmd, innerCmd])
 
 view : Model -> Browser.Document Msg
-view model =
+view { routesModel, signinModel, loginModel, appModel } =
   {
-    title = "Application"
+    title = "Sermo"
     , body = [
         switchButtonsView
         , div [] [
-          case model.route of
-            Signin -> Html.map SigninMsg (InForm.signinFormView model.signinModel)
-            Login -> Html.map LoginMsg (InForm.loginFormView model.loginModel)
-            Application -> Html.map AppMsg (Application.view model.appModel)
-            NotFound -> div [] [text "404 Not found"]  
+          case routesModel.route of
+            Routes.Signin -> Html.map SigninMsg (InForm.signinFormView signinModel)
+            Routes.Login -> Html.map LoginMsg (InForm.loginFormView loginModel)
+            Routes.Application -> Html.map AppMsg (Application.view appModel)
+            Routes.NotFound -> div [] [text "404 Not found"]  
         ]
     ]
   }

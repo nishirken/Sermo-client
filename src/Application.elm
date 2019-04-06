@@ -3,10 +3,11 @@ module Application exposing (..)
 import Http
 import Html
 import Browser
+import Common exposing (errorMessage)
 
 application = Browser.element
-  { init = \_ -> initialModel
-   , update = updateLogin
+  { init = \_ -> (initialModel, Cmd.none)
+  , update = update
   , view = view
   , subscriptions = \_ -> Sub.none
   }
@@ -19,9 +20,9 @@ type alias User =
 
 type Friends = Friends (List User)
 
-type alias Model = { user : User, errorMessage : String }
+type alias Model = { user : User, error : String }
 
-initialModel = (Model (User 0 "" (Friends [])) "", Cmd.none)
+initialModel = Model (User 0 "" (Friends [])) ""
 
 type Msg
   = LoadUser
@@ -32,10 +33,10 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    LoadUser -> (model, send DataReseived (post ("http://localhost:8080/graphql") (loginRequest model) loginDecoder))
-    DataReseived result ->
+    LoadUser -> (model, Cmd.none)
+    DataReceived result ->
       case result of
-        Ok res -> ({ mode | user = res }, Cmd.none)
+        Ok res -> ({ model | user = res }, Cmd.none)
         Err httpError -> ({ model | error = errorMessage httpError }, Cmd.none)
 
 view : Model -> Html.Html Msg

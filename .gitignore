@@ -1,2 +1,5 @@
 /.idea
 /elm-stuff
+/.vscode
+/index.html
+/node_modules
