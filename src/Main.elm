@@ -42,10 +42,18 @@ init _ url key =
   }, Cmd.none)
 
 updateInnerMsg : Msg -> Model -> (Model, Cmd Msg)
-updateInnerMsg msg model =
+updateInnerMsg msg model = let { authModel, routesModel, appModel } = model in
   case msg of
-    RouteMsg subMsg -> let (updatedModel, updatedCmd) = Routes.update subMsg model.routesModel in
-      ({ model | routesModel = updatedModel }, Cmd.map RouteMsg updatedCmd)
+    RouteMsg subMsg ->
+      let
+        (updatedModel, updatedCmd) = Routes.update subMsg routesModel
+        authRoute = case routesModel.route of
+          (Routes.AuthRoute subRoute) -> subRoute
+          _ -> authModel.route in
+        ({ model
+        | routesModel = updatedModel
+        , authModel = { authModel | route = authRoute }
+        }, Cmd.map RouteMsg updatedCmd)
     AuthMsg subMsg -> let (updatedModel, subCmd) = Auth.update subMsg model.authModel in
       ({ model | authModel = updatedModel }, Cmd.map AuthMsg subCmd)
     AppMsg subMsg -> let (updatedModel, subCmd) = App.update subMsg model.appModel in

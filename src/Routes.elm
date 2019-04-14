@@ -29,7 +29,7 @@ initialModel : Url -> Key -> Model
 initialModel url key =
   { url = url
   , key = key
-  , route = Application
+  , route = toRoute url
   }
 
 matchAuthRoute : Parser (AuthRoute -> a) a
@@ -42,7 +42,7 @@ matchAuthRoute =
 matchRoute : Parser (Route -> a) a
 matchRoute =
   oneOf
-    [ map AuthRoute (withLog matchAuthRoute)
+    [ map AuthRoute matchAuthRoute
     , map Application top
     ]
 
