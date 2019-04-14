@@ -10,7 +10,7 @@
   },
   "devDependencies": {},
   "scripts": {
-    "start": "elm-live src/Main.elm --start-page=custom.html -- --output=dist/elm.js"
+    "start": "elm-live src/Main.elm -u --start-page=custom.html -- --output=dist/elm.js"
   },
   "repository": {
     "type": "git",

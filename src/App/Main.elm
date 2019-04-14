@@ -1,9 +1,10 @@
-module Application exposing (..)
+module App.Main exposing (..)
 
 import Http
 import Html
 import Browser
-import Common exposing (errorMessage)
+import Common
+import Auth.Logout as Logout
 
 application = Browser.element
   { init = \_ -> (initialModel, Cmd.none)
@@ -27,8 +28,7 @@ initialModel = Model (User 0 "" (Friends [])) ""
 type Msg
   = LoadUser
   | DataReceived (Result Http.Error User)
-
--- decoder 
+  | LogoutMsg Common.GlobalMsg
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -37,7 +37,17 @@ update msg model =
     DataReceived result ->
       case result of
         Ok res -> ({ model | user = res }, Cmd.none)
-        Err httpError -> ({ model | error = errorMessage httpError }, Cmd.none)
+        Err httpError -> ({ model | error = Common.errorMessage httpError }, Cmd.none)
+    _ -> (model, Cmd.none)
+
+outMsg : Msg -> Common.GlobalMsg
+outMsg msg =
+  case msg of
+    (LogoutMsg subMsg) -> subMsg
+    _ -> Common.None
 
 view : Model -> Html.Html Msg
-view model = Html.div [] [Html.text "Application"]
+view model = Html.div []
+  [ Html.text "Application"
+  , Html.map LogoutMsg (Logout.view (\_ -> ()))
+  ]

@@ -5,16 +5,17 @@ import Browser exposing (element, UrlRequest (..))
 import Url exposing (Url, toString)
 import Url.Parser exposing (Parser, parse, map, oneOf, top, s)
 import Browser.Navigation exposing (Key, pushUrl, load)
-import Common exposing (GlobalMsg (..))
+import Common exposing (GlobalMsg (..), withLog)
 import Task
 
 type Msg
   = LinkClicked UrlRequest
   | UrlChanged Url
 
+type AuthRoute = Login | Signin
+
 type Route
-  = Signin
-  | Login
+  = AuthRoute AuthRoute
   | Application
   | NotFound
 
@@ -28,14 +29,20 @@ initialModel : Url -> Key -> Model
 initialModel url key =
   { url = url
   , key = key
-  , route = Login
+  , route = Application
   }
+
+matchAuthRoute : Parser (AuthRoute -> a) a
+matchAuthRoute =
+  oneOf
+    [ map Signin (s "signin")
+    , map Login (s "login")
+    ]
 
 matchRoute : Parser (Route -> a) a
 matchRoute =
   oneOf
-    [ map Signin (s "signin")
-    , map Login (s "login")
+    [ map AuthRoute (withLog matchAuthRoute)
     , map Application top
     ]
 
@@ -44,9 +51,10 @@ toRoute url = Maybe.withDefault NotFound (parse matchRoute url)
 
 routeToUrl : Route -> String
 routeToUrl route = case route of
-  Signin -> relative ["signin"] []
-  Login -> relative ["login"] []
-  Application -> relative [] []
+  AuthRoute subRoute -> case subRoute of
+    Signin -> relative ["signin"] []
+    Login -> relative ["login"] []
+  Application -> relative ["/"] []
   NotFound -> relative ["404"] []
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -67,5 +75,6 @@ updateOutCmd : GlobalMsg -> Model -> Cmd Msg
 updateOutCmd msg model =
   case msg of
     LoginSuccess _ -> pushUrl model.key (routeToUrl Application)
-    SigninSuccess -> pushUrl model.key (routeToUrl Login)
+    SigninSuccess -> pushUrl model.key (routeToUrl (AuthRoute Login))
+    Logout -> pushUrl model.key (routeToUrl (AuthRoute Login))
     _ -> Cmd.none

@@ -3,9 +3,13 @@ module Common exposing (..)
 import Http exposing (Error (..), expectJson, Expect)
 import Json.Decode exposing (Decoder (..), field, string, field, int, nullable, map2, bool)
 
+withLog x = Debug.log (Debug.toString x) x
+
 type GlobalMsg
   = LoginSuccess String
   | SigninSuccess
+  | Logout
+  | AuthSuccess Bool
   | None
 
 type alias JSONError =
