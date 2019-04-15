@@ -6909,6 +6909,7 @@ var author$project$Auth$LoginForm$update = F2(
 						}));
 			default:
 				var result = msg.a;
+				var initModel = author$project$Auth$Common$initialInFormModel;
 				if (result.$ === 'Ok') {
 					var res = result.a;
 					var error = author$project$Common$getJsonError(result);
@@ -6922,7 +6923,7 @@ var author$project$Auth$LoginForm$update = F2(
 								}),
 							elm$core$Platform$Cmd$none);
 					} else {
-						return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+						return _Utils_Tuple2(initModel, elm$core$Platform$Cmd$none);
 					}
 				} else {
 					var httpError = result.a;
@@ -6972,6 +6973,7 @@ var author$project$Auth$SigninForm$update = F2(
 						}));
 			default:
 				var result = msg.a;
+				var initModel = author$project$Auth$Common$initialInFormModel;
 				if (result.$ === 'Ok') {
 					var res = result.a;
 					var error = author$project$Common$getJsonError(result);
@@ -6985,7 +6987,7 @@ var author$project$Auth$SigninForm$update = F2(
 								}),
 							elm$core$Platform$Cmd$none);
 					} else {
-						return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+						return _Utils_Tuple2(initModel, elm$core$Platform$Cmd$none);
 					}
 				} else {
 					var httpError = result.a;
@@ -10719,8 +10721,11 @@ var author$project$Main$updateInnerMsg = F2(
 		switch (msg.$) {
 			case 'RouteMsg':
 				var subMsg = msg.a;
+				var _n2 = A2(author$project$Routes$update, subMsg, routesModel);
+				var updatedModel = _n2.a;
+				var updatedCmd = _n2.b;
 				var authRoute = function () {
-					var _n3 = routesModel.route;
+					var _n3 = updatedModel.route;
 					if (_n3.$ === 'AuthRoute') {
 						var subRoute = _n3.a;
 						return subRoute;
@@ -10728,9 +10733,6 @@ var author$project$Main$updateInnerMsg = F2(
 						return authModel.route;
 					}
 				}();
-				var _n2 = A2(author$project$Routes$update, subMsg, routesModel);
-				var updatedModel = _n2.a;
-				var updatedCmd = _n2.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,

@@ -30,12 +30,12 @@ update msg model =
       , body = AuthCommon.inRequest model
       , expect = Common.expectJsonResponse loginDecoder AuthCommon.DataReseived
       })
-    AuthCommon.DataReseived result ->
+    AuthCommon.DataReseived result -> let initModel = AuthCommon.initialInFormModel in
       case result of
         Ok res -> let error = Common.getJsonError result in
           case error of
             (Just e) -> ({ model | error = Maybe.withDefault "" e.message }, Cmd.none)
-            Nothing -> (model, Cmd.none)
+            Nothing -> (initModel, Cmd.none)
         Err httpError ->
             ({ model | error = Common.errorMessage httpError }, Cmd.none)
 

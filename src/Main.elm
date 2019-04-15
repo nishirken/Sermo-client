@@ -47,7 +47,7 @@ updateInnerMsg msg model = let { authModel, routesModel, appModel } = model in
     RouteMsg subMsg ->
       let
         (updatedModel, updatedCmd) = Routes.update subMsg routesModel
-        authRoute = case routesModel.route of
+        authRoute = case updatedModel.route of
           (Routes.AuthRoute subRoute) -> subRoute
           _ -> authModel.route in
         ({ model
