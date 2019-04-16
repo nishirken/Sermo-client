@@ -77,4 +77,6 @@ updateOutCmd msg model =
     LoginSuccess _ -> pushUrl model.key (routeToUrl Application)
     SigninSuccess -> pushUrl model.key (routeToUrl (AuthRoute Login))
     Logout -> pushUrl model.key (routeToUrl (AuthRoute Login))
+    (Authorized res) -> let route = if res == True then Application else (AuthRoute Login) in
+      pushUrl model.key (routeToUrl route)
     _ -> Cmd.none

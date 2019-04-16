@@ -5172,12 +5172,12 @@ var author$project$Auth$Common$InFormModel = F3(
 		return {email: email, error: error, password: password};
 	});
 var author$project$Auth$Common$initialInFormModel = A3(author$project$Auth$Common$InFormModel, '', '', '');
-var author$project$Auth$Main$Model = F3(
-	function (route, loginModel, signinModel) {
-		return {loginModel: loginModel, route: route, signinModel: signinModel};
+var author$project$Auth$Main$Model = F4(
+	function (route, loginModel, signinModel, token) {
+		return {loginModel: loginModel, route: route, signinModel: signinModel, token: token};
 	});
 var author$project$Routes$Login = {$: 'Login'};
-var author$project$Auth$Main$initialModel = A3(author$project$Auth$Main$Model, author$project$Routes$Login, author$project$Auth$Common$initialInFormModel, author$project$Auth$Common$initialInFormModel);
+var author$project$Auth$Main$initialModel = A4(author$project$Auth$Main$Model, author$project$Routes$Login, author$project$Auth$Common$initialInFormModel, author$project$Auth$Common$initialInFormModel, '');
 var author$project$Routes$NotFound = {$: 'NotFound'};
 var author$project$Routes$Application = {$: 'Application'};
 var author$project$Routes$AuthRoute = function (a) {
@@ -6937,11 +6937,23 @@ var author$project$Auth$LoginForm$update = F2(
 				}
 		}
 	});
+var author$project$Auth$Main$DataReseived = function (a) {
+	return {$: 'DataReseived', a: a};
+};
 var author$project$Auth$Main$LoginFormMsg = function (a) {
 	return {$: 'LoginFormMsg', a: a};
 };
 var author$project$Auth$Main$SigninFormMsg = function (a) {
 	return {$: 'SigninFormMsg', a: a};
+};
+var author$project$Auth$Main$authEncoder = function (token) {
+	return elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'token',
+				elm$json$Json$Encode$string(token))
+			]));
 };
 var elm$json$Json$Decode$bool = _Json_decodeBool;
 var author$project$Common$successDecoder = A2(elm$json$Json$Decode$field, 'success', elm$json$Json$Decode$bool);
@@ -7004,26 +7016,40 @@ var author$project$Auth$SigninForm$update = F2(
 var elm$core$Platform$Cmd$map = _Platform_map;
 var author$project$Auth$Main$update = F2(
 	function (msg, model) {
-		if (msg.$ === 'LoginFormMsg') {
-			var subMsg = msg.a;
-			var _n1 = A2(author$project$Auth$LoginForm$update, subMsg, model.loginModel);
-			var updatedModel = _n1.a;
-			var updatedCmd = _n1.b;
-			return _Utils_Tuple2(
-				_Utils_update(
+		switch (msg.$) {
+			case 'LoginFormMsg':
+				var subMsg = msg.a;
+				var _n1 = A2(author$project$Auth$LoginForm$update, subMsg, model.loginModel);
+				var updatedModel = _n1.a;
+				var updatedCmd = _n1.b;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{loginModel: updatedModel}),
+					A2(elm$core$Platform$Cmd$map, author$project$Auth$Main$LoginFormMsg, updatedCmd));
+			case 'SigninFormMsg':
+				var subMsg = msg.a;
+				var _n2 = A2(author$project$Auth$SigninForm$update, subMsg, model.signinModel);
+				var updatedModel = _n2.a;
+				var updatedCmd = _n2.b;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{signinModel: updatedModel}),
+					A2(elm$core$Platform$Cmd$map, author$project$Auth$Main$SigninFormMsg, updatedCmd));
+			case 'AuthorizedSend':
+				return _Utils_Tuple2(
 					model,
-					{loginModel: updatedModel}),
-				A2(elm$core$Platform$Cmd$map, author$project$Auth$Main$LoginFormMsg, updatedCmd));
-		} else {
-			var subMsg = msg.a;
-			var _n2 = A2(author$project$Auth$SigninForm$update, subMsg, model.signinModel);
-			var updatedModel = _n2.a;
-			var updatedCmd = _n2.b;
-			return _Utils_Tuple2(
-				_Utils_update(
-					model,
-					{signinModel: updatedModel}),
-				A2(elm$core$Platform$Cmd$map, author$project$Auth$Main$SigninFormMsg, updatedCmd));
+					elm$http$Http$post(
+						{
+							body: elm$http$Http$jsonBody(
+								author$project$Auth$Main$authEncoder(model.token)),
+							expect: A2(author$project$Common$expectJsonResponse, elm$json$Json$Decode$bool, author$project$Auth$Main$DataReseived),
+							url: 'http://localhost:8080/auth'
+						}));
+			default:
+				var result = msg.a;
+				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
 	});
 var author$project$Main$AppMsg = function (a) {
@@ -10813,13 +10839,32 @@ var author$project$Auth$SigninForm$outMsg = function (msg) {
 		return author$project$Common$None;
 	}
 };
+var author$project$Common$Authorized = function (a) {
+	return {$: 'Authorized', a: a};
+};
 var author$project$Auth$Main$outMsg = function (msg) {
-	if (msg.$ === 'LoginFormMsg') {
-		var subMsg = msg.a;
-		return author$project$Auth$LoginForm$outMsg(subMsg);
-	} else {
-		var subMsg = msg.a;
-		return author$project$Auth$SigninForm$outMsg(subMsg);
+	switch (msg.$) {
+		case 'LoginFormMsg':
+			var subMsg = msg.a;
+			return author$project$Auth$LoginForm$outMsg(subMsg);
+		case 'SigninFormMsg':
+			var subMsg = msg.a;
+			return author$project$Auth$SigninForm$outMsg(subMsg);
+		case 'DataReseived':
+			var result = msg.a;
+			if (result.$ === 'Ok') {
+				var data = author$project$Common$getJsonData(result);
+				if (data.$ === 'Just') {
+					var isAuthorized = data.a;
+					return author$project$Common$Authorized(isAuthorized);
+				} else {
+					return author$project$Common$Authorized(false);
+				}
+			} else {
+				return author$project$Common$Authorized(false);
+			}
+		default:
+			return author$project$Common$None;
 	}
 };
 var elm$url$Url$Builder$toQueryPair = function (_n0) {
@@ -10894,6 +10939,13 @@ var author$project$Routes$updateOutCmd = F2(
 					model.key,
 					author$project$Routes$routeToUrl(
 						author$project$Routes$AuthRoute(author$project$Routes$Login)));
+			case 'Authorized':
+				var res = msg.a;
+				var route = res ? author$project$Routes$Application : author$project$Routes$AuthRoute(author$project$Routes$Login);
+				return A2(
+					elm$browser$Browser$Navigation$pushUrl,
+					model.key,
+					author$project$Routes$routeToUrl(route));
 			default:
 				return elm$core$Platform$Cmd$none;
 		}
@@ -11234,4 +11286,4 @@ var author$project$Main$main = elm$browser$Browser$application(
 		view: author$project$Main$view
 	});
 _Platform_export({'Main':{'init':author$project$Main$main(
-	elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.0"},"types":{"message":"Main.Msg","aliases":{"App.Main.User":{"args":[],"type":"{ id : Basics.Int, email : String.String, friends : App.Main.Friends }"},"Auth.LoginForm.LoginFormMsg":{"args":[],"type":"Auth.Common.InFormMsg String.String"},"Auth.SigninForm.SigninFormMsg":{"args":[],"type":"Auth.Common.InFormMsg Basics.Bool"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Common.JSONError":{"args":[],"type":"{ code : Basics.Int, message : Maybe.Maybe String.String }"},"Common.JSONResponse":{"args":["a"],"type":"{ data : Maybe.Maybe a, error : Maybe.Maybe Common.JSONError }"}},"unions":{"Main.Msg":{"args":[],"tags":{"RouteMsg":["Routes.Msg"],"AuthMsg":["Auth.Main.Msg"],"AppMsg":["App.Main.Msg"]}},"App.Main.Msg":{"args":[],"tags":{"LoadUser":[],"DataReceived":["Result.Result Http.Error App.Main.User"],"LogoutMsg":["Common.GlobalMsg"]}},"Auth.Main.Msg":{"args":[],"tags":{"LoginFormMsg":["Auth.LoginForm.LoginFormMsg"],"SigninFormMsg":["Auth.SigninForm.SigninFormMsg"]}},"Routes.Msg":{"args":[],"tags":{"LinkClicked":["Browser.UrlRequest"],"UrlChanged":["Url.Url"]}},"App.Main.Friends":{"args":[],"tags":{"Friends":["List.List App.Main.User"]}},"Auth.Common.InFormMsg":{"args":["a"],"tags":{"Send":[],"Email":["String.String"],"Password":["String.String"],"DataReseived":["Result.Result Http.Error (Common.JSONResponse a)"]}},"Common.GlobalMsg":{"args":[],"tags":{"LoginSuccess":["String.String"],"SigninSuccess":[],"Logout":[],"AuthSuccess":["Basics.Bool"],"None":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"List.List":{"args":["a"],"tags":{}}}}})}});}(this));
+	elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.0"},"types":{"message":"Main.Msg","aliases":{"App.Main.User":{"args":[],"type":"{ id : Basics.Int, email : String.String, friends : App.Main.Friends }"},"Auth.LoginForm.LoginFormMsg":{"args":[],"type":"Auth.Common.InFormMsg String.String"},"Auth.SigninForm.SigninFormMsg":{"args":[],"type":"Auth.Common.InFormMsg Basics.Bool"},"Common.JSONError":{"args":[],"type":"{ code : Basics.Int, message : Maybe.Maybe String.String }"},"Common.JSONResponse":{"args":["a"],"type":"{ data : Maybe.Maybe a, error : Maybe.Maybe Common.JSONError }"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"}},"unions":{"Main.Msg":{"args":[],"tags":{"RouteMsg":["Routes.Msg"],"AuthMsg":["Auth.Main.Msg"],"AppMsg":["App.Main.Msg"]}},"App.Main.Msg":{"args":[],"tags":{"LoadUser":[],"DataReceived":["Result.Result Http.Error App.Main.User"],"LogoutMsg":["Common.GlobalMsg"]}},"Auth.Main.Msg":{"args":[],"tags":{"LoginFormMsg":["Auth.LoginForm.LoginFormMsg"],"SigninFormMsg":["Auth.SigninForm.SigninFormMsg"],"AuthorizedSend":[],"DataReseived":["Result.Result Http.Error (Common.JSONResponse Basics.Bool)"]}},"Routes.Msg":{"args":[],"tags":{"LinkClicked":["Browser.UrlRequest"],"UrlChanged":["Url.Url"]}},"App.Main.Friends":{"args":[],"tags":{"Friends":["List.List App.Main.User"]}},"Auth.Common.InFormMsg":{"args":["a"],"tags":{"Send":[],"Email":["String.String"],"Password":["String.String"],"DataReseived":["Result.Result Http.Error (Common.JSONResponse a)"]}},"Common.GlobalMsg":{"args":[],"tags":{"LoginSuccess":["String.String"],"SigninSuccess":[],"Logout":[],"Authorized":["Basics.Bool"],"None":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"List.List":{"args":["a"],"tags":{}}}}})}});}(this));

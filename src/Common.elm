@@ -9,7 +9,7 @@ type GlobalMsg
   = LoginSuccess String
   | SigninSuccess
   | Logout
-  | AuthSuccess Bool
+  | Authorized Bool
   | None
 
 type alias JSONError =
