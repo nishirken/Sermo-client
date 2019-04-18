@@ -2,11 +2,12 @@ module Auth.LoginForm exposing (..)
 
 import Browser
 import Auth.Common as AuthCommon
-import Common as Common
+import Common
 import Http
 import Html
 import Routes
 import Json.Decode as JsonDecode
+import LocalStorage
 
 main = Browser.element
   { init = \() -> (AuthCommon.initialInFormModel, Cmd.none)
@@ -35,7 +36,10 @@ update msg model =
         Ok res -> let error = Common.getJsonError result in
           case error of
             (Just e) -> ({ model | error = Maybe.withDefault "" e.message }, Cmd.none)
-            Nothing -> (initModel, Cmd.none)
+            Nothing -> let data = Common.getJsonData result in
+              case data of
+                (Just token) -> (initModel, LocalStorage.writeModel (LocalStorage.LocalStorageState token))
+                Nothing -> (model, Cmd.none)
         Err httpError ->
             ({ model | error = Common.errorMessage httpError }, Cmd.none)
 

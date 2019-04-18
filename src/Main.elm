@@ -9,6 +9,7 @@ import App.Main as App
 import Routes
 import Url exposing (Url)
 import Browser.Navigation exposing (Key)
+import LocalStorage
 
 type alias Model =
   { token : String
@@ -32,12 +33,14 @@ main = Browser.application
   , onUrlChange = \url -> RouteMsg (Routes.UrlChanged url)
   }
 
-init : () -> Url -> Key -> (Model, Cmd Msg)
-init _ url key =
-  ({ token = ""
+type alias Flags = { storageState : String }
+
+init : Flags -> Url -> Key -> (Model, Cmd Msg)
+init { storageState } url key = let { authToken } = (LocalStorage.decodeModel storageState) in
+  ({ token = authToken
   , isAuthorized = False
   , routesModel = Routes.initialModel url key
-  , authModel = Auth.initialModel
+  , authModel = let model = Auth.initialModel in { model | token = authToken }
   , appModel = App.initialModel
   }, Cmd.none)
 

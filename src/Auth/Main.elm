@@ -1,4 +1,4 @@
-module Auth.Main exposing (..)
+port module Auth.Main exposing (..)
 
 import Browser
 import Http
@@ -15,7 +15,6 @@ import Auth.Logout
 import Common
 import Routes
 import Task
-import Process
 
 type alias Model =
   { route : Routes.AuthRoute
@@ -33,7 +32,7 @@ type Msg
 initialModel = Model Routes.Login AuthCommon.initialInFormModel AuthCommon.initialInFormModel ""
 
 main = Browser.element
-  { init = \() -> (initialModel, Task.perform (\_ -> AuthorizedSend) (Process.sleep 0))
+  { init = \() -> (initialModel, Task.perform (\_ -> AuthorizedSend) (Task.succeed ()))
   , update = update
   , view = view
   , subscriptions = \_ -> Sub.none

@@ -10,7 +10,12 @@
 </head>
 <body>
   <script>
-    const app = Elm.Main.init();
+    const key = 'sermo';
+    const unParsedStoredState = localStorage.getItem(key) || "";
+    const app = Elm.Main.init({ flags: { storageState: unParsedStoredState } });
+    app.ports && app.ports.setStorage.subscribe(data => {
+      localStorage.setItem(key, JSON.stringify(data));
+    });
   </script>
 </body>
 </html>
