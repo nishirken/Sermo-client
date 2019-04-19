@@ -31,8 +31,11 @@ type Msg
 
 initialModel = Model Routes.Login AuthCommon.initialInFormModel AuthCommon.initialInFormModel ""
 
+initCmd : Cmd Msg
+initCmd = Task.perform (\_ -> AuthorizedSend) (Task.succeed ())
+
 main = Browser.element
-  { init = \() -> (initialModel, Task.perform (\_ -> AuthorizedSend) (Task.succeed ()))
+  { init = \() -> (initialModel, Cmd.none)
   , update = update
   , view = view
   , subscriptions = \_ -> Sub.none
