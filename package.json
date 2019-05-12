@@ -1,0 +1,26 @@
+{
+  "name": "sermo-client",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "bin": "index.js",
+  "dependencies": {
+    "elm": "^0.19.0",
+    "elm-live": "^3.4.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "elm-live src/Main.elm -u --start-page=custom.html -- --output=dist/elm.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nishirken/Sermo-client.git"
+  },
+  "keywords": [],
+  "author": "Dmitrii Skurikhin",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nishirken/Sermo-client/issues"
+  },
+  "homepage": "https://github.com/nishirken/Sermo-client#readme"
+}
