@@ -1,8 +1,7 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (text, h1, div)
-import Html.Attributes exposing (href)
+import Html.Styled exposing (text, h1, div, toUnstyled, map)
 import Auth.Main as Auth
 import Common
 import App.Main as App
@@ -106,14 +105,13 @@ update msg model =
 
 view : Model -> Browser.Document Msg
 view { routesModel, authModel, appModel } =
-  {
-    title = "Sermo"
-    , body = [
-        div [] [
-          case routesModel.route of
-            Routes.AuthRoute _ -> Html.map AuthMsg (Auth.view authModel)
-            Routes.Application -> Html.map AppMsg (App.view appModel)
-            Routes.NotFound -> div [] [text "404 Not found"]  
+  { title = "Sermo"
+  , body = [
+      div [] [
+        case routesModel.route of
+          Routes.AuthRoute _ -> map AuthMsg (Auth.view authModel)
+          Routes.Application -> map AppMsg (App.view appModel)
+          Routes.NotFound -> div [] [text "404 Not found"]  
         ]
     ]
   }

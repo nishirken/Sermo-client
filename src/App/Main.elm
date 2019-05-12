@@ -1,42 +1,48 @@
 module App.Main exposing (..)
 
 import Http
-import Html
 import Browser
 import Common
 import Auth.Logout as Logout
+import App.Common as AppCommon
+import App.TextArea as TextArea
+import App.FriendsList as FriendsList
+import App.Chat as Chat
+import App.Styles as Styles
+import Html.Styled exposing (Html, toUnstyled, div, text, map)
 
-application = Browser.element
+main = Browser.element
   { init = \() -> (initialModel, Cmd.none)
   , update = update
-  , view = view
+  , view = toUnstyled << view
   , subscriptions = \_ -> Sub.none
   }
 
-type alias User =
-  { id : Int
-  , email : String
-  , friends : Friends
-  }
-
-type Friends = Friends (List User)
-
 type alias Model =
-  { user : User
+  { user : AppCommon.User
   , error : String
   , logoutModel : Logout.Model
+  , chatModel : Chat.Model
+  , friendsListModel : FriendsList.Model
+  , textAreaModel : TextArea.Model
   }
 
 initialModel =
-  { user = User 0 "" (Friends [])
+  { user = AppCommon.User 0 "" []
   , error = ""
   , logoutModel = Logout.initialModel
+  , chatModel = Chat.initialModel
+  , friendsListModel = FriendsList.initialModel
+  , textAreaModel = TextArea.initialModel
   }
 
 type Msg
   = LoadUser
-  | DataReceived (Result Http.Error User)
+  | DataReceived (Result Http.Error AppCommon.User)
   | LogoutMsg Logout.Msg
+  | FriendsListMsg FriendsList.Msg
+  | ChatMsg Chat.Msg
+  | TextAreaMsg TextArea.Msg
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -48,6 +54,7 @@ update msg model =
       case result of
         Ok res -> ({ model | user = res }, Cmd.none)
         Err httpError -> ({ model | error = Common.errorMessage httpError }, Cmd.none)
+    _ -> (model, Cmd.none)
 
 outMsg : Msg -> Common.GlobalMsg
 outMsg msg =
@@ -55,8 +62,15 @@ outMsg msg =
     (LogoutMsg subMsg) -> Common.Logout
     _ -> Common.None
 
-view : Model -> Html.Html Msg
-view model = Html.div []
-  [ Html.text "Application"
-  , Html.map LogoutMsg (Logout.view model.logoutModel)
+view : Model -> Html Msg
+view { logoutModel, friendsListModel, chatModel, textAreaModel } = div []
+  [ Styles.title [] [text "Application"]
+  , Styles.appContainer []
+    [ Styles.friendsListContainer [] [map FriendsListMsg (FriendsList.view friendsListModel)]
+    , Styles.chatContainer []
+      [ map ChatMsg (Chat.view chatModel)
+      , map TextAreaMsg (TextArea.view textAreaModel)
+      ]
+    ]
+  , map LogoutMsg (Logout.view logoutModel)
   ]

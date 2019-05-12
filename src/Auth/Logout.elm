@@ -3,8 +3,9 @@ module Auth.Logout exposing (..)
 import Browser
 import Common
 import Html
-import Html.Events exposing (onClick)
+import Html.Styled.Events exposing (onClick)
 import LocalStorage
+import Html.Styled exposing (Html, toUnstyled, button, text)
 
 type alias Model = {}
 
@@ -16,7 +17,7 @@ initialModel = {}
 main = Browser.element
   { init = \() -> (initialModel, Cmd.none)
   , update = update
-  , view = view
+  , view = toUnstyled << view
   , subscriptions = \_ -> Sub.none
   }
 
@@ -27,6 +28,6 @@ outMsg : Msg -> Common.GlobalMsg
 outMsg msg = case msg of
   Logout -> Common.Logout
 
-view : Model -> Html.Html Msg
+view : Model -> Html Msg
 view _ =
-  Html.button [onClick Logout] [Html.text "Logout"]
+  button [onClick Logout] [text "Logout"]
