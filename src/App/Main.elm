@@ -7,7 +7,7 @@ import Common
 import Auth.Logout as Logout
 
 application = Browser.element
-  { init = \_ -> (initialModel, Cmd.none)
+  { init = \() -> (initialModel, Cmd.none)
   , update = update
   , view = view
   , subscriptions = \_ -> Sub.none
@@ -15,39 +15,48 @@ application = Browser.element
 
 type alias User =
   { id : Int
-    , email : String
-    , friends : Friends
+  , email : String
+  , friends : Friends
   }
 
 type Friends = Friends (List User)
 
-type alias Model = { user : User, error : String }
+type alias Model =
+  { user : User
+  , error : String
+  , logoutModel : Logout.Model
+  }
 
-initialModel = Model (User 0 "" (Friends [])) ""
+initialModel =
+  { user = User 0 "" (Friends [])
+  , error = ""
+  , logoutModel = Logout.initialModel
+  }
 
 type Msg
   = LoadUser
   | DataReceived (Result Http.Error User)
-  | LogoutMsg Common.GlobalMsg
+  | LogoutMsg Logout.Msg
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
+    (LogoutMsg subMsg) -> let (updatedModel, updatedCmd) = Logout.update subMsg model.logoutModel in
+      ({ model | logoutModel = updatedModel }, Cmd.map LogoutMsg updatedCmd)
     LoadUser -> (model, Cmd.none)
     DataReceived result ->
       case result of
         Ok res -> ({ model | user = res }, Cmd.none)
         Err httpError -> ({ model | error = Common.errorMessage httpError }, Cmd.none)
-    _ -> (model, Cmd.none)
 
 outMsg : Msg -> Common.GlobalMsg
 outMsg msg =
   case msg of
-    (LogoutMsg subMsg) -> subMsg
+    (LogoutMsg subMsg) -> Common.Logout
     _ -> Common.None
 
 view : Model -> Html.Html Msg
 view model = Html.div []
   [ Html.text "Application"
-  , Html.map LogoutMsg (Logout.view (\_ -> ()))
+  , Html.map LogoutMsg (Logout.view model.logoutModel)
   ]

@@ -71,12 +71,17 @@ update msg model = case msg of
     , route = toRoute url
     }, Cmd.none)
 
+authorizedRoute : Bool -> Route -> Route
+authorizedRoute isAuthorized route =
+  if isAuthorized == True
+    then Application
+    else if route == Application then AuthRoute Login else route
+
 updateOutCmd : GlobalMsg -> Model -> Cmd Msg
 updateOutCmd msg model =
   case msg of
     LoginSuccess _ -> pushUrl model.key (routeToUrl Application)
     SigninSuccess -> pushUrl model.key (routeToUrl (AuthRoute Login))
     Logout -> pushUrl model.key (routeToUrl (AuthRoute Login))
-    (Authorized res) -> let route = if res == True then Application else (AuthRoute Login) in
-      pushUrl model.key (routeToUrl route)
+    (Authorized res) -> pushUrl model.key (routeToUrl (authorizedRoute res model.route))
     _ -> Cmd.none

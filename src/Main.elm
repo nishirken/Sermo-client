@@ -65,13 +65,22 @@ updateInnerMsg msg model = let { authModel, routesModel, appModel } = model in
 updateOutModel : Common.GlobalMsg -> Model -> Model
 updateOutModel globalMsg model =
   case globalMsg of
-    (Common.LoginSuccess token) -> { model | token = token }
-    Common.Logout -> { model | token = "" }
+    (Common.LoginSuccess token) ->
+      { model
+      | token = token
+      , authModel = Auth.updateOutModel globalMsg model.authModel
+      }
+    (Common.Authorized isAuthorized) -> { model | isAuthorized = isAuthorized }
+    Common.Logout ->
+      { model
+      | token = ""
+      , authModel = Auth.updateOutModel globalMsg model.authModel
+      }
     _ -> model
 
 updateOutCmd : Common.GlobalMsg -> Model -> Cmd Msg
 updateOutCmd msg model = Cmd.batch
-  [Cmd.map RouteMsg (Routes.updateOutCmd msg model.routesModel)]
+  [ Cmd.map RouteMsg (Routes.updateOutCmd msg model.routesModel) ]
 
 updateOutMsg : Msg -> Model -> (Model, Cmd Msg)
 updateOutMsg msg model =

@@ -29,7 +29,8 @@ type Msg
   | AuthorizedSend
   | DataReseived (Result Http.Error (Common.JSONResponse Bool))
 
-initialModel = Model Routes.Login AuthCommon.initialInFormModel AuthCommon.initialInFormModel ""
+initialModel =
+  Model Routes.Login AuthCommon.initialInFormModel AuthCommon.initialInFormModel ""
 
 initCmd : Cmd Msg
 initCmd = Task.perform (\_ -> AuthorizedSend) (Task.succeed ())
@@ -54,9 +55,16 @@ update msg model =
     AuthorizedSend -> (model, Http.post
       { url = "http://localhost:8080/auth"
       , body = Http.jsonBody (authEncoder model.token)
-      , expect = Common.expectJsonResponse JsonDecode.bool DataReseived
+      , expect = Common.expectJsonResponse Common.successDecoder DataReseived
       })
     DataReseived result -> (model, Cmd.none)
+
+updateOutModel : Common.GlobalMsg -> Model -> Model
+updateOutModel msg model =
+  case msg of
+    Common.Logout -> ({ model | token = "" })
+    (Common.LoginSuccess token) -> ({ model | token = token })
+    _ -> model
 
 outMsg : Msg -> Common.GlobalMsg
 outMsg msg =
