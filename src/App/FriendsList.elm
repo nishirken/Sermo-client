@@ -14,9 +14,9 @@ type Msg = None
 
 type alias Model =
   { friends : List AppCommon.Friend }
-
+testFriend = AppCommon.Friend "test@mail.ru"
 initialModel : Model
-initialModel = { friends = [] }
+initialModel = { friends = [testFriend, testFriend, testFriend] }
 
 update : Msg -> Model -> Model
 update _ model = model

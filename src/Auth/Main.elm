@@ -4,8 +4,8 @@ import Browser
 import Http
 import Json.Decode as JsonDecode
 import Json.Encode as JsonEncode
-import Html exposing (div, Html)
-import Html.Attributes exposing (style)
+import Html.Styled exposing (div, Html, toUnstyled, map)
+import Html.Styled.Attributes exposing (style)
 import Auth.Common as AuthCommon
 import Auth.SigninButton
 import Auth.SigninForm
@@ -38,7 +38,7 @@ initCmd = Task.perform (\_ -> AuthorizedSend) (Task.succeed ())
 main = Browser.element
   { init = \() -> (initialModel, Cmd.none)
   , update = update
-  , view = view
+  , view = toUnstyled << view
   , subscriptions = \_ -> Sub.none
   }
 
@@ -81,8 +81,8 @@ outMsg msg =
 
 form : Model -> Html Msg
 form model = case model.route of
-  Routes.Login -> Html.map LoginFormMsg (Auth.LoginForm.view model.loginModel)
-  Routes.Signin -> Html.map SigninFormMsg (Auth.SigninForm.view model.signinModel)
+  Routes.Login -> map LoginFormMsg (Auth.LoginForm.view model.loginModel)
+  Routes.Signin -> map SigninFormMsg (Auth.SigninForm.view model.signinModel)
 
 authButton : Routes.AuthRoute -> Html Msg
 authButton route =

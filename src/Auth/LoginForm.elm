@@ -4,7 +4,7 @@ import Browser
 import Auth.Common as AuthCommon
 import Common
 import Http
-import Html
+import Html.Styled exposing (Html, toUnstyled)
 import Routes
 import Json.Decode as JsonDecode
 import LocalStorage
@@ -12,7 +12,7 @@ import LocalStorage
 main = Browser.element
   { init = \() -> (AuthCommon.initialInFormModel, Cmd.none)
   , update = update
-  , view = view
+  , view = toUnstyled << view
   , subscriptions = \_ -> Sub.none
   }
 
@@ -51,5 +51,5 @@ outMsg msg =
       Nothing -> Common.None
     _ -> Common.None
 
-view : AuthCommon.InFormModel -> Html.Html LoginFormMsg
+view : AuthCommon.InFormModel -> Html LoginFormMsg
 view model = AuthCommon.inFormView model "Login"

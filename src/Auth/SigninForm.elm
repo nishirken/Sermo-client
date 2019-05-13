@@ -4,13 +4,13 @@ import Browser
 import Auth.Common as AuthCommon
 import Common as Common
 import Http
-import Html
+import Html.Styled exposing (Html, toUnstyled)
 import Routes
 
 main = Browser.element
   { init = \() -> (AuthCommon.initialInFormModel, Cmd.none)
   , update = update
-  , view = view
+  , view = toUnstyled << view
   , subscriptions = \_ -> Sub.none
   }
 
@@ -43,5 +43,5 @@ outMsg msg =
       _ -> Common.None
     _ -> Common.None
 
-view : AuthCommon.InFormModel -> Html.Html SigninFormMsg
+view : AuthCommon.InFormModel -> Html SigninFormMsg
 view model = AuthCommon.inFormView model "Signin"

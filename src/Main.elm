@@ -106,7 +106,7 @@ update msg model =
 view : Model -> Browser.Document Msg
 view { routesModel, authModel, appModel } =
   { title = "Sermo"
-  , body = [
+  , body = List.map toUnstyled [
       div [] [
         case routesModel.route of
           Routes.AuthRoute _ -> map AuthMsg (Auth.view authModel)

@@ -15,7 +15,7 @@ type Msg = None
 type alias Model = { messages : List String }
 
 initialModel : Model
-initialModel = { messages = [] }
+initialModel = { messages = ["test message", "test message", "test message"] }
 
 update : Msg -> Model -> Model
 update _ model = model
