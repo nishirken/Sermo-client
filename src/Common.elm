@@ -1,6 +1,9 @@
 module Common exposing (..)
 
 import Http exposing (Error (..), expectJson, Expect)
+import Graphql.Http as GraphqlHttp
+import Graphql.SelectionSet as GraphqlSelectionSet
+import Graphql.Operation as GraphqlOperation
 import Json.Decode exposing (Decoder (..), field, string, field, int, nullable, map2, bool)
 
 withLog x = Debug.log (Debug.toString x) x
@@ -52,3 +55,11 @@ errorMessage error = case error of
   (BadUrl url) -> "Bad url: " ++ url
   (BadBody msg) -> "Error with response decoding. " ++ msg
   (BadStatus code) -> "Something went wrong..." ++ " code: " ++ (String.fromInt code)
+
+makeGraphQLRequest :
+  (Result (GraphqlHttp.Error decodesTo) decodesTo -> msg) ->
+  GraphqlSelectionSet.SelectionSet decodesTo GraphqlOperation.RootQuery ->
+  Cmd msg
+makeGraphQLRequest msg query =
+  let request = GraphqlHttp.withCredentials (GraphqlHttp.queryRequest "http://localhost:8080/graphql" query) in
+  GraphqlHttp.send msg request
