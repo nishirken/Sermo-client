@@ -2,7 +2,7 @@ module App.FriendsList exposing (..)
 
 import Browser
 import Html.Styled exposing (Html, div, text, toUnstyled)
-import App.Common as AppCommon
+import App.Models.Friend exposing (Friend)
 
 main = Browser.sandbox
   { init = initialModel
@@ -13,8 +13,9 @@ main = Browser.sandbox
 type Msg = None
 
 type alias Model =
-  { friends : List AppCommon.Friend }
-testFriend = AppCommon.Friend "test@mail.ru"
+  { friends : List Friend }
+
+testFriend = Friend "test@mail.ru"
 initialModel : Model
 initialModel = { friends = [testFriend, testFriend, testFriend] }
 

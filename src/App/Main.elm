@@ -4,11 +4,11 @@ import Graphql.Http as Http
 import Browser
 import Common
 import Auth.Logout as Logout
-import App.Common as AppCommon
+import App.Models.User exposing (User (..))
 import App.TextArea as TextArea
 import App.FriendsList as FriendsList
 import App.Chat as Chat
-import App.Schemas as Schemas
+import App.Queries.User as UserQuery
 import App.Styles as Styles
 import Html.Styled exposing (Html, toUnstyled, div, text, map)
 
@@ -20,7 +20,7 @@ main = Browser.element
   }
 
 type alias Model =
-  { user : AppCommon.User
+  { user : User
   , error : String
   , logoutModel : Logout.Model
   , chatModel : Chat.Model
@@ -39,7 +39,7 @@ initialModel =
 
 type Msg
   = LoadUser
-  | DataReceived (Result (Http.Error AppCommon.User) AppCommon.User)
+  | DataReceived (Result (Http.Error User) User)
   | LogoutMsg Logout.Msg
   | FriendsListMsg FriendsList.Msg
   | ChatMsg Chat.Msg
@@ -50,7 +50,7 @@ update msg model =
   case msg of
     (LogoutMsg subMsg) -> let (updatedModel, updatedCmd) = Logout.update subMsg model.logoutModel in
       ({ model | logoutModel = updatedModel }, Cmd.map LogoutMsg updatedCmd)
-    LoadUser -> (model, Common.makeGraphQLRequest DataReceived Schemas.userQuery)
+    LoadUser -> (model, Http.send DataReceived (Http.queryRequest "http://localhost:8080" Schemas.userQuery))
     DataReceived result ->
       case result of
         Ok res -> ({ model | user = res }, Cmd.none)
