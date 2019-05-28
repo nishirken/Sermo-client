@@ -41,7 +41,7 @@ init { storageState } url key = let { authToken } = (LocalStorage.decodeModel st
   , routesModel = Routes.initialModel url key
   , authModel = let model = Auth.initialModel in { model | token = authToken }
   , appModel = App.initialModel
-  }, Cmd.map AuthMsg Auth.initCmd)
+  }, Cmd.batch [Cmd.map AuthMsg Auth.initCmd, Cmd.map AppMsg App.initCmd])
 
 updateInnerMsg : Msg -> Model -> (Model, Cmd Msg)
 updateInnerMsg msg model = let { authModel, routesModel, appModel } = model in

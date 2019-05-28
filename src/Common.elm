@@ -60,6 +60,4 @@ makeGraphQLRequest :
   (Result (GraphqlHttp.Error decodesTo) decodesTo -> msg) ->
   GraphqlSelectionSet.SelectionSet decodesTo GraphqlOperation.RootQuery ->
   Cmd msg
-makeGraphQLRequest msg query =
-  let request = GraphqlHttp.withCredentials (GraphqlHttp.queryRequest "http://localhost:8080/graphql" query) in
-  GraphqlHttp.send msg request
+makeGraphQLRequest msg query = GraphqlHttp.send msg (GraphqlHttp.queryRequest "http://localhost:8080/graphql" query)

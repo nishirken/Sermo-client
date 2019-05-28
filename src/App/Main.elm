@@ -4,23 +4,25 @@ import Graphql.Http as Http
 import Browser
 import Common
 import Auth.Logout as Logout
-import App.Models.User exposing (User (..))
+import App.Models.User exposing (User)
 import App.TextArea as TextArea
 import App.FriendsList as FriendsList
 import App.Chat as Chat
 import App.Queries.User as UserQuery
 import App.Styles as Styles
 import Html.Styled exposing (Html, toUnstyled, div, text, map)
+import Task
 
 main = Browser.element
-  { init = \() -> (initialModel, Cmd.none)
+  { init = \() -> (initialModel, initCmd)
   , update = update
   , view = toUnstyled << view
   , subscriptions = \_ -> Sub.none
   }
 
 type alias Model =
-  { user : User
+  { userId : Int
+  , user : User
   , error : String
   , logoutModel : Logout.Model
   , chatModel : Chat.Model
@@ -29,7 +31,8 @@ type alias Model =
   }
 
 initialModel =
-  { user = AppCommon.User 0 "" []
+  { userId = 0
+  , user = User 0 "" []
   , error = ""
   , logoutModel = Logout.initialModel
   , chatModel = Chat.initialModel
@@ -37,9 +40,11 @@ initialModel =
   , textAreaModel = TextArea.initialModel
   }
 
+initCmd = Task.perform (\_ -> LoadUser) (Task.succeed ())
+
 type Msg
   = LoadUser
-  | DataReceived (Result (Http.Error User) User)
+  | DataReceived (Result (Http.Error (Maybe User)) (Maybe User))
   | LogoutMsg Logout.Msg
   | FriendsListMsg FriendsList.Msg
   | ChatMsg Chat.Msg
@@ -50,11 +55,13 @@ update msg model =
   case msg of
     (LogoutMsg subMsg) -> let (updatedModel, updatedCmd) = Logout.update subMsg model.logoutModel in
       ({ model | logoutModel = updatedModel }, Cmd.map LogoutMsg updatedCmd)
-    LoadUser -> (model, Http.send DataReceived (Http.queryRequest "http://localhost:8080" Schemas.userQuery))
-    DataReceived result ->
+    LoadUser -> (model, Common.makeGraphQLRequest DataReceived (UserQuery.userQuery 6))
+    DataReceived result -> let errorRes = ({ model | error = "Error with user load" }, Cmd.none) in
       case result of
-        Ok res -> ({ model | user = res }, Cmd.none)
-        Err httpError -> ({ model | error = Common.errorMessage httpError }, Cmd.none)
+        Ok res -> case res of
+          (Just user) -> ({ model | user = user }, Cmd.none)
+          Nothing -> errorRes
+        Err httpError -> errorRes
     _ -> (model, Cmd.none)
 
 outMsg : Msg -> Common.GlobalMsg
