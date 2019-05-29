@@ -55,7 +55,7 @@ update msg model =
   case msg of
     (LogoutMsg subMsg) -> let (updatedModel, updatedCmd) = Logout.update subMsg model.logoutModel in
       ({ model | logoutModel = updatedModel }, Cmd.map LogoutMsg updatedCmd)
-    LoadUser -> (model, Common.makeGraphQLRequest DataReceived (UserQuery.userQuery 6))
+    LoadUser -> (model, Common.makeGraphQLRequest DataReceived (UserQuery.query 1))
     DataReceived result -> let errorRes = ({ model | error = "Error with user load" }, Cmd.none) in
       case result of
         Ok res -> case res of
