@@ -59,7 +59,7 @@ update msg model =
     DataReceived result -> let errorRes = ({ model | error = "Error with user load" }, Cmd.none) in
       case result of
         Ok res -> case res of
-          (Just user) -> ({ model | user = user }, Cmd.none)
+          (Just user) -> ({ model | user = user, friendsListModel = { friends = user.friends } }, Cmd.none)
           Nothing -> errorRes
         Err httpError -> errorRes
     _ -> (model, Cmd.none)

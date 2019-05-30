@@ -13,15 +13,13 @@ main = Browser.sandbox
 type Msg = None
 
 type alias Model =
-  { friends : List Friend }
+  { friends : List String }
 
-testFriend = Friend "test@mail.ru"
-initialModel : Model
-initialModel = { friends = [testFriend, testFriend, testFriend] }
+initialModel = Model []
 
 update : Msg -> Model -> Model
 update _ model = model
 
 view : Model -> Html Msg
 view model =
-  div [] (List.map (\{ email } -> div [] [text email]) model.friends)
+  div [] (List.map (\email -> div [] [text email]) model.friends)

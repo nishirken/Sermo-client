@@ -15,8 +15,8 @@ userId = selectionForField "Int" "id" [] JD.int
 userEmail : SelectionSet String User
 userEmail = selectionForField "String" "email" [] JD.string
 
-userFriends : SelectionSet (List Friend) User
-userFriends = selectionForField "(List Friends)" "friends" [] (JD.list friendDecoder)
+userFriends : SelectionSet (List String) User
+userFriends = selectionForField "(List Friends)" "friends" [] (JD.list JD.string)
 
 userQuery : Int -> SelectionSet decodesTo User -> SelectionSet (Maybe decodesTo) RootQuery
 userQuery id object_ = selectionForCompositeField "user" [required "id" id int] object_ (identity >> JD.nullable)
