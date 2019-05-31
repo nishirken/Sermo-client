@@ -40,7 +40,7 @@ init { storageState } url key = let { authToken } = (LocalStorage.decodeModel st
   , isAuthorized = False
   , routesModel = Routes.initialModel url key
   , authModel = let model = Auth.initialModel in { model | token = authToken }
-  , appModel = App.initialModel
+  , appModel = let model = App.initialModel in { model | token = authToken }
   }, Cmd.batch [Cmd.map AuthMsg Auth.initCmd, Cmd.map AppMsg App.initCmd])
 
 updateInnerMsg : Msg -> Model -> (Model, Cmd Msg)
@@ -68,18 +68,20 @@ updateOutModel globalMsg model =
       { model
       | token = token
       , authModel = Auth.updateOutModel globalMsg model.authModel
+      , appModel = App.updateOutModel globalMsg model.appModel
       }
     (Common.Authorized isAuthorized) -> { model | isAuthorized = isAuthorized }
     Common.Logout ->
       { model
       | token = ""
       , authModel = Auth.updateOutModel globalMsg model.authModel
+      , appModel = App.updateOutModel globalMsg model.appModel
       }
     _ -> model
 
 updateOutCmd : Common.GlobalMsg -> Model -> Cmd Msg
 updateOutCmd msg model = Cmd.batch
-  [ Cmd.map RouteMsg (Routes.updateOutCmd msg model.routesModel) ]
+  [ Cmd.map RouteMsg (Routes.updateOutCmd msg model.routesModel), Cmd.map AppMsg (App.updateOutCmd msg model.appModel) ]
 
 updateOutMsg : Msg -> Model -> (Model, Cmd Msg)
 updateOutMsg msg model =

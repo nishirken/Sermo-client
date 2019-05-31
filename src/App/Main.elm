@@ -1,6 +1,6 @@
 module App.Main exposing (..)
 
-import Graphql.Http as Http
+import Http
 import Browser
 import Common
 import Auth.Logout as Logout
@@ -22,6 +22,7 @@ main = Browser.element
 
 type alias Model =
   { userId : Int
+  , token : String
   , user : User
   , error : String
   , logoutModel : Logout.Model
@@ -32,6 +33,7 @@ type alias Model =
 
 initialModel =
   { userId = 0
+  , token = ""
   , user = User 0 "" []
   , error = ""
   , logoutModel = Logout.initialModel
@@ -40,11 +42,10 @@ initialModel =
   , textAreaModel = TextArea.initialModel
   }
 
-initCmd = Task.perform (\_ -> LoadUser) (Task.succeed ())
+initCmd = Cmd.none
 
 type Msg
-  = LoadUser
-  | DataReceived (Result (Http.Error (Maybe User)) (Maybe User))
+  = DataReceived (Result Http.Error (Maybe User))
   | LogoutMsg Logout.Msg
   | FriendsListMsg FriendsList.Msg
   | ChatMsg Chat.Msg
@@ -55,7 +56,6 @@ update msg model =
   case msg of
     (LogoutMsg subMsg) -> let (updatedModel, updatedCmd) = Logout.update subMsg model.logoutModel in
       ({ model | logoutModel = updatedModel }, Cmd.map LogoutMsg updatedCmd)
-    LoadUser -> (model, Common.makeGraphQLRequest DataReceived (UserQuery.query 1))
     DataReceived result -> let errorRes = ({ model | error = "Error with user load" }, Cmd.none) in
       case result of
         Ok res -> case res of
@@ -63,6 +63,22 @@ update msg model =
           Nothing -> errorRes
         Err httpError -> errorRes
     _ -> (model, Cmd.none)
+
+loadUser : Model -> Cmd Msg
+loadUser model = Common.makeGraphQLRequest DataReceived (UserQuery.query 6) model.token
+
+updateOutModel : Common.GlobalMsg -> Model -> Model
+updateOutModel globalMsg model =
+  case globalMsg of
+    (Common.LoginSuccess token) -> ({ model | token = token })
+    Common.Logout -> ({ model | token = "" })
+    _ -> model
+
+updateOutCmd : Common.GlobalMsg -> Model -> Cmd Msg
+updateOutCmd globalMsg model =
+  case globalMsg of
+    (Common.Authorized res) -> if res == True then loadUser model else Cmd.none
+    _ -> Cmd.none
 
 outMsg : Msg -> Common.GlobalMsg
 outMsg msg =

@@ -1,10 +1,12 @@
 module Common exposing (..)
 
-import Http exposing (Error (..), expectJson, Expect)
+import Http exposing (Error (..), expectJson, Expect, post, jsonBody)
 import Graphql.Http as GraphqlHttp
 import Graphql.SelectionSet as GraphqlSelectionSet
 import Graphql.Operation as GraphqlOperation
+import Graphql.Document as GraphqlDocument
 import Json.Decode exposing (Decoder (..), field, string, field, int, nullable, map2, bool)
+import Json.Encode as JE
 
 withLog x = Debug.log (Debug.toString x) x
 
@@ -13,6 +15,7 @@ type GlobalMsg
   | SigninSuccess
   | Logout
   | Authorized Bool
+  | AppEntered
   | None
 
 type alias JSONError =
@@ -25,6 +28,14 @@ type alias JSONResponse a =
   , error : Maybe JSONError
   }
 
+type alias GraphqlRequest =
+  { token : String
+  , body : String
+  }
+
+graphqlRequestEncoder : String -> String -> JE.Value
+graphqlRequestEncoder token graphqlData = JE.object [("token", JE.string token), ("body", JE.string graphqlData)]
+
 errorDecoder : Decoder JSONError
 errorDecoder = map2 JSONError (field "code" int) (field "message" (nullable string))
 
@@ -36,7 +47,7 @@ successDecoder : Decoder Bool
 successDecoder = field "success" bool
 
 expectJsonResponse : Decoder a -> (Result Error (JSONResponse a) -> msg) -> Expect msg
-expectJsonResponse dataDecoder data = expectJson data (responseDecoder dataDecoder)
+expectJsonResponse dataDecoder msg = expectJson msg (responseDecoder dataDecoder)
 
 getJsonData : (Result Error (JSONResponse a)) -> Maybe a
 getJsonData response = case response of
@@ -57,7 +68,16 @@ errorMessage error = case error of
   (BadStatus code) -> "Something went wrong..." ++ " code: " ++ (String.fromInt code)
 
 makeGraphQLRequest :
-  (Result (GraphqlHttp.Error decodesTo) decodesTo -> msg) ->
+  (Result Error decodesTo -> msg) ->
   GraphqlSelectionSet.SelectionSet decodesTo GraphqlOperation.RootQuery ->
+  String ->
   Cmd msg
-makeGraphQLRequest msg query = GraphqlHttp.send msg (GraphqlHttp.queryRequest "http://localhost:8080/graphql" query)
+makeGraphQLRequest msg query authToken =
+  let
+    expectGraphqlResponse = expectJson msg (GraphqlDocument.decoder query)
+    graphqlBody = GraphqlDocument.serializeQuery query in
+  post 
+    { url = "http://localhost:8080/graphql"
+    , body = jsonBody (graphqlRequestEncoder authToken graphqlBody)
+    , expect = expectGraphqlResponse
+    }
