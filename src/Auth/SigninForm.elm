@@ -25,14 +25,14 @@ update msg model =
       , body = AuthCommon.inRequest model
       , expect = Common.expectJsonResponse AuthCommon.authDecoder AuthCommon.DataReseived
       })
-    AuthCommon.DataReseived result -> let initModel = AuthCommon.initialInFormModel in
+    AuthCommon.DataReseived result ->
       case result of
         Ok res -> let error = Common.getJsonError result in
           case error of
             (Just e) -> ({ model | error = Maybe.withDefault "" e.message }, Cmd.none)
             Nothing -> let data = Common.getJsonData result in
               case data of
-                (Just { token }) -> (initModel, LocalStorage.writeModel (LocalStorage.LocalStorageState token))
+                (Just { token }) -> (AuthCommon.initialInFormModel, LocalStorage.writeModel (LocalStorage.LocalStorageState token))
                 Nothing -> (model, Cmd.none)
         Err httpError ->
             ({ model | error = Common.errorMessage httpError }, Cmd.none)
@@ -41,7 +41,7 @@ outMsg : AuthCommon.InFormMsg -> Common.GlobalMsg
 outMsg msg =
   case msg of
     (AuthCommon.DataReseived res) -> let data = Common.getJsonData res in case data of
-      (Just d) -> Common.LoginSuccess d
+      (Just d) -> Common.SigninSuccess d
       _ -> Common.None
     _ -> Common.None
 

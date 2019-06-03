@@ -24,7 +24,8 @@ type InFormMsg
   | DataReseived (Result Http.Error (Common.JSONResponse Common.AuthResponse))
 
 authDecoder : JD.Decoder Common.AuthResponse
-authDecoder = JD.map2 Common.AuthResponse JD.int JD.string 
+authDecoder = JD.map2 Common.AuthResponse
+  (JD.field "id" JD.int) (JD.field "token" JD.string)
 
 inRequest : InFormModel -> Http.Body
 inRequest { email, password } =

@@ -81,7 +81,7 @@ updateOutCmd : GlobalMsg -> Model -> Cmd Msg
 updateOutCmd msg model =
   case msg of
     LoginSuccess _ -> pushUrl model.key (routeToUrl Application)
-    SigninSuccess -> pushUrl model.key (routeToUrl (AuthRoute Login))
+    SigninSuccess _ -> pushUrl model.key (routeToUrl Application)
     Logout -> pushUrl model.key (routeToUrl (AuthRoute Login))
     (Authorized res) -> pushUrl model.key (routeToUrl (authorizedRoute res model.route))
     _ -> Cmd.none

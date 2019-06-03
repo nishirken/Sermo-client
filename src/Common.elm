@@ -12,6 +12,7 @@ withLog x = Debug.log (Debug.toString x) x
 
 type GlobalMsg
   = LoginSuccess AuthResponse
+  | SigninSuccess AuthResponse
   | Logout
   | Authorized Bool
   | AppEntered
