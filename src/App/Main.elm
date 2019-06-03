@@ -65,12 +65,12 @@ update msg model =
     _ -> (model, Cmd.none)
 
 loadUser : Model -> Cmd Msg
-loadUser model = Common.makeGraphQLRequest DataReceived (UserQuery.query 6) model.token
+loadUser model = Common.makeGraphQLRequest DataReceived (UserQuery.query model.userId) model.token
 
 updateOutModel : Common.GlobalMsg -> Model -> Model
 updateOutModel globalMsg model =
   case globalMsg of
-    (Common.LoginSuccess token) -> ({ model | token = token })
+    (Common.LoginSuccess { id, token }) -> ({ model | token = token, userId = id })
     Common.Logout -> ({ model | token = "" })
     _ -> model
 

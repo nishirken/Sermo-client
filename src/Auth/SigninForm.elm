@@ -6,6 +6,7 @@ import Common as Common
 import Http
 import Html.Styled exposing (Html, toUnstyled)
 import Routes
+import LocalStorage
 
 main = Browser.element
   { init = \() -> (AuthCommon.initialInFormModel, Cmd.none)
@@ -14,9 +15,7 @@ main = Browser.element
   , subscriptions = \_ -> Sub.none
   }
 
-type alias SigninFormMsg = AuthCommon.InFormMsg Bool
-
-update : SigninFormMsg -> AuthCommon.InFormModel -> (AuthCommon.InFormModel, Cmd SigninFormMsg)
+update : AuthCommon.InFormMsg -> AuthCommon.InFormModel -> (AuthCommon.InFormModel, Cmd AuthCommon.InFormMsg)
 update msg model =
   case msg of
     AuthCommon.Email email -> ({ model | email = email }, Cmd.none)
@@ -24,24 +23,27 @@ update msg model =
     AuthCommon.Send -> (model, Http.post
       { url = "http://localhost:8080/signin"
       , body = AuthCommon.inRequest model
-      , expect = Common.expectJsonResponse Common.successDecoder AuthCommon.DataReseived
+      , expect = Common.expectJsonResponse AuthCommon.authDecoder AuthCommon.DataReseived
       })
     AuthCommon.DataReseived result -> let initModel = AuthCommon.initialInFormModel in
       case result of
         Ok res -> let error = Common.getJsonError result in
           case error of
             (Just e) -> ({ model | error = Maybe.withDefault "" e.message }, Cmd.none)
-            Nothing -> (initModel, Cmd.none)
+            Nothing -> let data = Common.getJsonData result in
+              case data of
+                (Just { token }) -> (initModel, LocalStorage.writeModel (LocalStorage.LocalStorageState token))
+                Nothing -> (model, Cmd.none)
         Err httpError ->
             ({ model | error = Common.errorMessage httpError }, Cmd.none)
 
-outMsg : SigninFormMsg -> Common.GlobalMsg
+outMsg : AuthCommon.InFormMsg -> Common.GlobalMsg
 outMsg msg =
   case msg of
     (AuthCommon.DataReseived res) -> let data = Common.getJsonData res in case data of
-      (Just _) -> Common.SigninSuccess
+      (Just d) -> Common.LoginSuccess d
       _ -> Common.None
     _ -> Common.None
 
-view : AuthCommon.InFormModel -> Html SigninFormMsg
+view : AuthCommon.InFormModel -> Html AuthCommon.InFormMsg
 view model = AuthCommon.inFormView model "Signin"

@@ -6,7 +6,6 @@ import Common
 import Http
 import Html.Styled exposing (Html, toUnstyled)
 import Routes
-import Json.Decode as JsonDecode
 import LocalStorage
 
 main = Browser.element
@@ -16,12 +15,7 @@ main = Browser.element
   , subscriptions = \_ -> Sub.none
   }
 
-type alias LoginFormMsg = AuthCommon.InFormMsg String
-
-loginDecoder : JsonDecode.Decoder String
-loginDecoder = JsonDecode.field "token" JsonDecode.string
-
-update : LoginFormMsg -> AuthCommon.InFormModel -> (AuthCommon.InFormModel, Cmd LoginFormMsg)
+update : AuthCommon.InFormMsg -> AuthCommon.InFormModel -> (AuthCommon.InFormModel, Cmd AuthCommon.InFormMsg)
 update msg model =
   case msg of
     AuthCommon.Email email -> ({ model | email = email }, Cmd.none)
@@ -29,7 +23,7 @@ update msg model =
     AuthCommon.Send -> (model, Http.post
       { url = "http://localhost:8080/login"
       , body = AuthCommon.inRequest model
-      , expect = Common.expectJsonResponse loginDecoder AuthCommon.DataReseived
+      , expect = Common.expectJsonResponse AuthCommon.authDecoder AuthCommon.DataReseived
       })
     AuthCommon.DataReseived result -> let initModel = AuthCommon.initialInFormModel in
       case result of
@@ -38,18 +32,18 @@ update msg model =
             (Just e) -> ({ model | error = Maybe.withDefault "" e.message }, Cmd.none)
             Nothing -> let data = Common.getJsonData result in
               case data of
-                (Just token) -> (initModel, LocalStorage.writeModel (LocalStorage.LocalStorageState token))
+                (Just { token }) -> (initModel, LocalStorage.writeModel (LocalStorage.LocalStorageState token))
                 Nothing -> (model, Cmd.none)
         Err httpError ->
             ({ model | error = Common.errorMessage httpError }, Cmd.none)
 
-outMsg : LoginFormMsg -> Common.GlobalMsg
+outMsg : AuthCommon.InFormMsg -> Common.GlobalMsg
 outMsg msg =
   case msg of
     (AuthCommon.DataReseived res) -> let data = Common.getJsonData res in case data of
-      (Just token) -> Common.LoginSuccess token
+      (Just d) -> Common.LoginSuccess d
       Nothing -> Common.None
     _ -> Common.None
 
-view : AuthCommon.InFormModel -> Html LoginFormMsg
+view : AuthCommon.InFormModel -> Html AuthCommon.InFormMsg
 view model = AuthCommon.inFormView model "Login"

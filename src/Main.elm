@@ -64,7 +64,7 @@ updateInnerMsg msg model = let { authModel, routesModel, appModel } = model in
 updateOutModel : Common.GlobalMsg -> Model -> Model
 updateOutModel globalMsg model =
   case globalMsg of
-    (Common.LoginSuccess token) ->
+    (Common.LoginSuccess { token }) ->
       { model
       | token = token
       , authModel = Auth.updateOutModel globalMsg model.authModel

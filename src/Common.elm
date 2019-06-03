@@ -11,8 +11,7 @@ import Json.Encode as JE
 withLog x = Debug.log (Debug.toString x) x
 
 type GlobalMsg
-  = LoginSuccess String
-  | SigninSuccess
+  = LoginSuccess AuthResponse
   | Logout
   | Authorized Bool
   | AppEntered
@@ -31,6 +30,11 @@ type alias JSONResponse a =
 type alias GraphqlRequest =
   { token : String
   , body : String
+  }
+
+type alias AuthResponse =
+  { id : Int
+  , token : String
   }
 
 graphqlRequestEncoder : String -> String -> JE.Value

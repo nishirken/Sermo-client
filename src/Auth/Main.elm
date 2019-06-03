@@ -24,8 +24,8 @@ type alias Model =
   }
 
 type Msg
-  = LoginFormMsg Auth.LoginForm.LoginFormMsg
-  | SigninFormMsg Auth.SigninForm.SigninFormMsg
+  = LoginFormMsg AuthCommon.InFormMsg
+  | SigninFormMsg AuthCommon.InFormMsg
   | AuthorizedSend
   | DataReseived (Result Http.Error (Common.JSONResponse Bool))
 
@@ -63,7 +63,7 @@ updateOutModel : Common.GlobalMsg -> Model -> Model
 updateOutModel msg model =
   case msg of
     Common.Logout -> ({ model | token = "" })
-    (Common.LoginSuccess token) -> ({ model | token = token })
+    (Common.LoginSuccess response) -> ({ model | token = response.token })
     _ -> model
 
 outMsg : Msg -> Common.GlobalMsg
