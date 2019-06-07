@@ -24,9 +24,9 @@ main = Browser.element
 update : Msg -> Model -> (Model, Cmd Msg)
 update _ model = (model, LocalStorage.writeModel (LocalStorage.LocalStorageState ""))
 
-outMsg : Msg -> Common.GlobalMsg
-outMsg msg = case msg of
-  Logout -> Common.Logout
+-- outMsg : Msg -> Common.GlobalMsg
+-- outMsg msg = case msg of
+--   Logout -> Common.Logout
 
 view : Model -> Html Msg
 view _ =

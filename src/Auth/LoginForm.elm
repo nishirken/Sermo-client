@@ -37,13 +37,13 @@ update msg model =
         Err httpError ->
             ({ model | error = Common.errorMessage httpError }, Cmd.none)
 
-outMsg : AuthCommon.InFormMsg -> Common.GlobalMsg
-outMsg msg =
-  case msg of
-    (AuthCommon.DataReseived res) -> let data = Common.getJsonData res in case data of
-      (Just d) -> Common.LoginSuccess d
-      Nothing -> Common.None
-    _ -> Common.None
+-- outMsg : AuthCommon.InFormMsg -> Common.GlobalMsg
+-- outMsg msg =
+--   case msg of
+--     (AuthCommon.DataReseived res) -> let data = Common.getJsonData res in case data of
+--       (Just d) -> Common.LoginSuccess d
+--       Nothing -> Common.None
+--     _ -> Common.None
 
 view : AuthCommon.InFormModel -> Html AuthCommon.InFormMsg
 view model = AuthCommon.inFormView model "Login"

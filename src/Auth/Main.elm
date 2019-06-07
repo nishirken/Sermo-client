@@ -59,25 +59,25 @@ update msg model =
       })
     DataReseived result -> (model, Cmd.none)
 
-updateOutModel : Common.GlobalMsg -> Model -> Model
-updateOutModel msg model =
-  case msg of
-    Common.Logout -> ({ model | token = "" })
-    (Common.LoginSuccess response) -> ({ model | token = response.token })
-    _ -> model
+-- updateOutModel : Common.GlobalMsg -> Model -> Model
+-- updateOutModel msg model =
+--   case msg of
+--     Common.Logout -> ({ model | token = "" })
+--     (Common.LoginSuccess response) -> ({ model | token = response.token })
+--     _ -> model
 
-outMsg : Msg -> Common.GlobalMsg
-outMsg msg =
-  case msg of
-    (LoginFormMsg subMsg) -> Auth.LoginForm.outMsg subMsg
-    (SigninFormMsg subMsg) -> Auth.SigninForm.outMsg subMsg
-    (DataReseived result) -> case result of
-      Ok _ -> let data = Common.getJsonData result in
-        case data of
-          (Just isAuthorized) -> Common.Authorized isAuthorized
-          Nothing -> Common.Authorized False
-      Err _ -> Common.Authorized False
-    _ -> Common.None
+-- outMsg : Msg -> Common.GlobalMsg
+-- outMsg msg =
+--   case msg of
+--     (LoginFormMsg subMsg) -> Auth.LoginForm.outMsg subMsg
+--     (SigninFormMsg subMsg) -> Auth.SigninForm.outMsg subMsg
+--     (DataReseived result) -> case result of
+--       Ok _ -> let data = Common.getJsonData result in
+--         case data of
+--           (Just isAuthorized) -> Common.Authorized isAuthorized
+--           Nothing -> Common.Authorized False
+--       Err _ -> Common.Authorized False
+--     _ -> Common.None
 
 form : Model -> Html Msg
 form model = case model.route of
