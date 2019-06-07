@@ -37,12 +37,12 @@ formInput p v toMsg =
   [type_ "text", onInput toMsg, placeholder p, required True, value v]
   []
 
-inFormView : InFormModel -> String -> Html InFormMsg
-inFormView model formTitle =
+inFormView : InFormModel -> (String -> msg) -> (String -> msg) -> msg -> String -> Html msg
+inFormView model onEmailChange onPasswordChange onSubmit formTitle =
     div [] [
       h3 [] [text formTitle]
-      , formInput "email" model.email Email
-      , formInput "password" model.password Password
-      , button [onClick Send] [text formTitle]
+      , formInput "email" model.email onEmailChange
+      , formInput "password" model.password onPasswordChange
+      , button [onClick onSubmit] [text formTitle]
       , div [] [text model.error]
     ]

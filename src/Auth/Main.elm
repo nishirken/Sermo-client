@@ -28,6 +28,7 @@ type Msg
   | SigninFormMsg AuthCommon.InFormMsg
   | AuthorizedSend
   | DataReseived (Result Http.Error (Common.JSONResponse Bool))
+  | LoginSuccess Common.AuthResponse
 
 initialModel =
   Model Routes.Login AuthCommon.initialInFormModel AuthCommon.initialInFormModel ""
@@ -45,11 +46,20 @@ main = Browser.element
 authEncoder : String -> JsonEncode.Value
 authEncoder token = JsonEncode.object [("token", JsonEncode.string token)]
 
+loginDictionary : Auth.LoginForm.TranslationDictionary Msg
+loginDictionary =
+  { onInternalMsg = LoginFormMsg
+  , onLoginSuccess = LoginSuccess
+  }
+
+loginTranslator : Auth.LoginForm.Translator Msg
+loginTranslator = Auth.LoginForm.translator loginDictionary
+
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     (LoginFormMsg subMsg) -> let (updatedModel, updatedCmd) = Auth.LoginForm.update subMsg model.loginModel in
-      ({ model | loginModel = updatedModel }, Cmd.map LoginFormMsg updatedCmd)
+      ({ model | loginModel = updatedModel }, Cmd.map loginTranslator updatedCmd)
     (SigninFormMsg subMsg) -> let (updatedModel, updatedCmd) = Auth.SigninForm.update subMsg model.signinModel in
       ({ model | signinModel = updatedModel }, Cmd.map SigninFormMsg updatedCmd)
     AuthorizedSend -> (model, Http.post
@@ -58,6 +68,7 @@ update msg model =
       , expect = Common.expectJsonResponse Common.successDecoder DataReseived
       })
     DataReseived result -> (model, Cmd.none)
+    (LoginSuccess response) -> ({ model | token = response.token })
 
 -- updateOutModel : Common.GlobalMsg -> Model -> Model
 -- updateOutModel msg model =
@@ -81,7 +92,7 @@ update msg model =
 
 form : Model -> Html Msg
 form model = case model.route of
-  Routes.Login -> map LoginFormMsg (Auth.LoginForm.view model.loginModel)
+  Routes.Login -> map loginTranslator (Auth.LoginForm.view model.loginModel)
   Routes.Signin -> map SigninFormMsg (Auth.SigninForm.view model.signinModel)
 
 authButton : Routes.AuthRoute -> Html Msg

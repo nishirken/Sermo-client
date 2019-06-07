@@ -4,18 +4,29 @@ import Browser
 import Auth.Common as AuthCommon
 import Common
 import Http
-import Html.Styled exposing (Html, toUnstyled)
+import Html.Styled exposing (Html, toUnstyled, div)
 import Routes
 import LocalStorage
 
 main = Browser.element
   { init = \() -> (AuthCommon.initialInFormModel, Cmd.none)
   , update = update
-  , view = toUnstyled << view
+  , view = view
   , subscriptions = \_ -> Sub.none
   }
 
-update : AuthCommon.InFormMsg -> AuthCommon.InFormModel -> (AuthCommon.InFormModel, Cmd AuthCommon.InFormMsg)
+type OutMsg = LoginSuccess Common.AuthResponse
+
+type Msg = ForSelf AuthCommon.InFormMsg | ForParent OutMsg
+
+type alias TranslationDictionary msg =
+  { onInternalMsg : AuthCommon.InFormMsg -> msg
+  , onLoginSuccess : Common.AuthResponse -> msg
+  }
+
+type alias Translator parentMsg = Msg -> parentMsg
+
+update : AuthCommon.InFormMsg -> AuthCommon.InFormModel -> (AuthCommon.InFormModel, Cmd Msg)
 update msg model =
   case msg of
     AuthCommon.Email email -> ({ model | email = email }, Cmd.none)
@@ -23,7 +34,7 @@ update msg model =
     AuthCommon.Send -> (model, Http.post
       { url = "http://localhost:8080/login"
       , body = AuthCommon.inRequest model
-      , expect = Common.expectJsonResponse AuthCommon.authDecoder AuthCommon.DataReseived
+      , expect = Common.expectJsonResponse AuthCommon.authDecoder (AuthCommon.DataReseived >> ForSelf)
       })
     AuthCommon.DataReseived result -> let initModel = AuthCommon.initialInFormModel in
       case result of
@@ -37,13 +48,13 @@ update msg model =
         Err httpError ->
             ({ model | error = Common.errorMessage httpError }, Cmd.none)
 
--- outMsg : AuthCommon.InFormMsg -> Common.GlobalMsg
--- outMsg msg =
---   case msg of
---     (AuthCommon.DataReseived res) -> let data = Common.getJsonData res in case data of
---       (Just d) -> Common.LoginSuccess d
---       Nothing -> Common.None
---     _ -> Common.None
+translator : TranslationDictionary msg -> Translator msg
+translator { onInternalMsg, onLoginSuccess } msg =
+  case msg of
+    ForSelf internal -> onInternalMsg internal
+    ForParent (LoginSuccess response) -> onLoginSuccess response
 
-view : AuthCommon.InFormModel -> Html AuthCommon.InFormMsg
-view model = AuthCommon.inFormView model "Login"
+view : AuthCommon.InFormModel -> Html Msg
+view model =
+  -- AuthCommon.inFormView model (AuthCommon.Email >> ForSelf) (AuthCommon.Password >> ForSelf) (ForSelf AuthCommon.Send) "Login"
+  div [] []
