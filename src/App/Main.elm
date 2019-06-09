@@ -12,18 +12,10 @@ import App.Queries.User as UserQuery
 import App.Styles as Styles
 import Html.Styled exposing (Html, toUnstyled, div, text, map)
 import Task
-
-main = Browser.element
-  { init = \() -> (initialModel, initCmd)
-  , update = update
-  , view = toUnstyled << view
-  , subscriptions = \_ -> Sub.none
-  }
+import SharedState
 
 type alias Model =
-  { userId : Int
-  , token : String
-  , user : User
+  { user : User
   , error : String
   , logoutModel : Logout.Model
   , chatModel : Chat.Model
@@ -32,9 +24,7 @@ type alias Model =
   }
 
 initialModel =
-  { userId = 0
-  , token = ""
-  , user = User 0 "" []
+  { user = User 0 "" []
   , error = ""
   , logoutModel = Logout.initialModel
   , chatModel = Chat.initialModel
@@ -51,40 +41,23 @@ type Msg
   | ChatMsg Chat.Msg
   | TextAreaMsg TextArea.Msg
 
-update : Msg -> Model -> (Model, Cmd Msg)
+update : Msg -> Model -> (Model, Cmd Msg, Maybe SharedState.Msg)
 update msg model =
   case msg of
-    (LogoutMsg subMsg) -> let (updatedModel, updatedCmd) = Logout.update subMsg model.logoutModel in
-      ({ model | logoutModel = updatedModel }, Cmd.map LogoutMsg updatedCmd)
-    DataReceived result -> let errorRes = ({ model | error = "Error with user load" }, Cmd.none) in
+    (LogoutMsg subMsg) -> let (updatedModel, updatedCmd, stateMsg) = Logout.update subMsg model.logoutModel in
+      ({ model | logoutModel = updatedModel }, Cmd.map LogoutMsg updatedCmd, stateMsg)
+    DataReceived result -> let errorRes = ({ model | error = "Error with user load" }, Cmd.none, Nothing) in
       case result of
         Ok res -> case res of
-          (Just user) -> ({ model | user = user, friendsListModel = { friends = user.friends } }, Cmd.none)
+          (Just user) -> ({ model | user = user, friendsListModel = { friends = user.friends } }, Cmd.none, Nothing)
           Nothing -> errorRes
         Err httpError -> errorRes
-    _ -> (model, Cmd.none)
+    _ -> (model, Cmd.none, Nothing)
 
-loadUser : Model -> Cmd Msg
-loadUser model = Common.makeGraphQLRequest DataReceived (UserQuery.query model.userId) model.token
-
-updateOutModel : Common.GlobalMsg -> Model -> Model
-updateOutModel globalMsg model =
-  case globalMsg of
-    (Common.LoginSuccess { id, token }) -> ({ model | token = token, userId = id })
-    Common.Logout -> ({ model | token = "" })
-    _ -> model
-
-updateOutCmd : Common.GlobalMsg -> Model -> Cmd Msg
-updateOutCmd globalMsg model =
-  case globalMsg of
-    (Common.Authorized res) -> if res == True then loadUser model else Cmd.none
-    _ -> Cmd.none
-
-outMsg : Msg -> Common.GlobalMsg
-outMsg msg =
-  case msg of
-    (LogoutMsg subMsg) -> Common.Logout
-    _ -> Common.None
+loadUser : SharedState.Model -> Cmd Msg
+loadUser { userId, token } = case userId of
+  (Just id) -> Common.makeGraphQLRequest DataReceived (UserQuery.query id) token
+  Nothing -> Cmd.none
 
 view : Model -> Html Msg
 view { logoutModel, friendsListModel, chatModel, textAreaModel } = div []

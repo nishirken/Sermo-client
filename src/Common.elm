@@ -7,6 +7,7 @@ import Graphql.Operation as GraphqlOperation
 import Graphql.Document as GraphqlDocument
 import Json.Decode exposing (Decoder (..), field, string, field, int, nullable, map2, bool)
 import Json.Encode as JE
+import Task
 
 withLog x = Debug.log (Debug.toString x) x
 
@@ -86,3 +87,6 @@ makeGraphQLRequest msg query authToken =
     , body = jsonBody (graphqlRequestEncoder authToken graphqlBody)
     , expect = expectGraphqlResponse
     }
+
+cmdMsg : msg -> Cmd msg
+cmdMsg msg = Task.perform (\_ -> msg) (Task.succeed ())

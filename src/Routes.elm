@@ -15,7 +15,7 @@ type Msg
 type AuthRoute = Login | Signin
 
 type Route
-  = AuthRoute AuthRoute
+  = Auth AuthRoute
   | Application
   | NotFound
 
@@ -42,7 +42,7 @@ matchAuthRoute =
 matchRoute : Parser (Route -> a) a
 matchRoute =
   oneOf
-    [ map AuthRoute matchAuthRoute
+    [ map Auth matchAuthRoute
     , map Application top
     ]
 
@@ -51,7 +51,7 @@ toRoute url = Maybe.withDefault NotFound (parse matchRoute url)
 
 routeToUrl : Route -> String
 routeToUrl route = case route of
-  AuthRoute subRoute -> case subRoute of
+  Auth subRoute -> case subRoute of
     Signin -> relative ["signin"] []
     Login -> relative ["login"] []
   Application -> relative ["/"] []
@@ -75,13 +75,13 @@ authorizedRoute : Bool -> Route -> Route
 authorizedRoute isAuthorized route =
   if isAuthorized == True
     then Application
-    else if route == Application then AuthRoute Login else route
+    else if route == Application then Auth Login else route
 
 updateOutCmd : GlobalMsg -> Model -> Cmd Msg
 updateOutCmd msg model =
   case msg of
     LoginSuccess _ -> pushUrl model.key (routeToUrl Application)
     SigninSuccess _ -> pushUrl model.key (routeToUrl Application)
-    Logout -> pushUrl model.key (routeToUrl (AuthRoute Login))
+    Logout -> pushUrl model.key (routeToUrl (Auth Login))
     (Authorized res) -> pushUrl model.key (routeToUrl (authorizedRoute res model.route))
     _ -> Cmd.none
