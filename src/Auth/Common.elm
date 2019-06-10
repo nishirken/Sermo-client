@@ -5,7 +5,7 @@ import Html.Styled exposing (div, h3, button, text, Html, input)
 import Html.Styled.Attributes exposing (type_, placeholder, required, value)
 import Html.Styled.Events exposing (onInput, onClick)
 import Common
-import Routes
+import Routes.Main as Routes
 import Json.Encode as JE
 import Json.Decode as JD
 

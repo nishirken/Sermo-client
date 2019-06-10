@@ -6,7 +6,7 @@ import Common
 import Http
 import Html.Styled exposing (Html, toUnstyled, div, h3, button, text, Html)
 import Html.Styled.Events exposing (onInput, onClick)
-import Routes
+import Routes.Main as Routes
 import LocalStorage
 import SharedState
 

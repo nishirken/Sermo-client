@@ -1,7 +1,8 @@
 module SharedState exposing (..)
 
+import Browser.Navigation exposing (Key)
 import Common
-import Routes
+import Routes.Route as Routes
 
 type Msg
   = Login Common.AuthResponse
@@ -10,15 +11,17 @@ type Msg
   | RouteChanged Routes.Route
 
 type alias Model =
-  { token : String
+  { navigationKey : Key
+  , token : String
   , isAuthorized : Bool
   , userId : Maybe Int
   , currentRoute : Routes.Route
   }
 
-initModel : Model
-initModel =
-  { token = ""
+initialModel : Key -> Model
+initialModel key =
+  { navigationKey = key
+  , token = ""
   , isAuthorized = False
   , userId = Nothing
   , currentRoute = Routes.Auth Routes.Login

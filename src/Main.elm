@@ -6,7 +6,7 @@ import Auth.Main as Auth
 import Auth.Common as AuthCommon
 import Common
 import App.Main as App
-import Routes
+import Routes.Main as Routes
 import Url exposing (Url)
 import Browser.Navigation exposing (Key)
 import LocalStorage

@@ -13,7 +13,7 @@ import Auth.LoginForm
 import Auth.LoginButton
 import Auth.Logout
 import Common
-import Routes
+import Routes.Main as Routes
 import Task
 import SharedState
 
