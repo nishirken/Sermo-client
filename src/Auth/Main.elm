@@ -13,14 +13,15 @@ import Auth.LoginForm
 import Auth.LoginButton
 import Auth.Logout
 import Common
-import Routes
+import Routes.Main as Routes
+import Routes.Route as Route
 import Task
+import Shared.Update exposing (Update, UpdateResult)
+import Shared.State
 
 type alias Model =
-  { route : Routes.AuthRoute
-  , loginModel : AuthCommon.InFormModel
+  { loginModel : AuthCommon.InFormModel
   , signinModel : AuthCommon.InFormModel
-  , token : String
   }
 
 type Msg
@@ -30,69 +31,59 @@ type Msg
   | DataReseived (Result Http.Error (Common.JSONResponse Bool))
 
 initialModel =
-  Model Routes.Login AuthCommon.initialInFormModel AuthCommon.initialInFormModel ""
+  Model AuthCommon.initialInFormModel AuthCommon.initialInFormModel
 
 initCmd : Cmd Msg
 initCmd = Task.perform (\_ -> AuthorizedSend) (Task.succeed ())
 
-main = Browser.element
-  { init = \() -> (initialModel, Cmd.none)
-  , update = update
-  , view = toUnstyled << view
-  , subscriptions = \_ -> Sub.none
-  }
-
 authEncoder : String -> JsonEncode.Value
 authEncoder token = JsonEncode.object [("token", JsonEncode.string token)]
 
-update : Msg -> Model -> (Model, Cmd Msg)
-update msg model =
+update : Update Msg Model
+update msg model sharedModel =
   case msg of
-    (LoginFormMsg subMsg) -> let (updatedModel, updatedCmd) = Auth.LoginForm.update subMsg model.loginModel in
-      ({ model | loginModel = updatedModel }, Cmd.map LoginFormMsg updatedCmd)
-    (SigninFormMsg subMsg) -> let (updatedModel, updatedCmd) = Auth.SigninForm.update subMsg model.signinModel in
-      ({ model | signinModel = updatedModel }, Cmd.map SigninFormMsg updatedCmd)
-    AuthorizedSend -> (model, Http.post
-      { url = "http://localhost:8080/auth"
-      , body = Http.jsonBody (authEncoder model.token)
-      , expect = Common.expectJsonResponse Common.successDecoder DataReseived
-      })
-    DataReseived result -> (model, Cmd.none)
+    (LoginFormMsg subMsg) ->
+      let
+        updatedResult : UpdateResult AuthCommon.InFormModel AuthCommon.InFormMsg
+        updatedResult = Auth.LoginForm.update subMsg model.loginModel sharedModel
+        { updatedModel, updatedCmd, stateMsg, routeCmd } = updatedResult
+          in UpdateResult { model | loginModel = updatedModel } (Cmd.map LoginFormMsg updatedCmd) stateMsg routeCmd
+    (SigninFormMsg subMsg) ->
+      let
+        { updatedModel, updatedCmd, stateMsg, routeCmd } = Auth.SigninForm.update subMsg model.signinModel sharedModel in
+        UpdateResult { model | signinModel = updatedModel } (Cmd.map SigninFormMsg updatedCmd) stateMsg routeCmd
+    AuthorizedSend -> UpdateResult
+      model
+      (Http.post
+        { url = "http://localhost:8080/auth"
+        , body = Http.jsonBody (authEncoder sharedModel.token)
+        , expect = Common.expectJsonResponse Common.successDecoder DataReseived
+        })
+      Nothing
+      Cmd.none
+    DataReseived result -> case Common.getJsonData result of
+      (Just isAuthorized) -> UpdateResult model Cmd.none (Just (Shared.State.Authorized isAuthorized)) Cmd.none
+      Nothing -> UpdateResult model Cmd.none Nothing Cmd.none
 
-updateOutModel : Common.GlobalMsg -> Model -> Model
-updateOutModel msg model =
-  case msg of
-    Common.Logout -> ({ model | token = "" })
-    (Common.LoginSuccess response) -> ({ model | token = response.token })
-    _ -> model
+form : Model -> Route.AuthRoute -> Html Msg
+form { loginModel, signinModel } authRoute = case authRoute of
+  Route.Login -> map LoginFormMsg (Auth.LoginForm.view loginModel)
+  Route.Signin -> map SigninFormMsg (Auth.SigninForm.view signinModel)
 
-outMsg : Msg -> Common.GlobalMsg
-outMsg msg =
-  case msg of
-    (LoginFormMsg subMsg) -> Auth.LoginForm.outMsg subMsg
-    (SigninFormMsg subMsg) -> Auth.SigninForm.outMsg subMsg
-    (DataReseived result) -> case result of
-      Ok _ -> let data = Common.getJsonData result in
-        case data of
-          (Just isAuthorized) -> Common.Authorized isAuthorized
-          Nothing -> Common.Authorized False
-      Err _ -> Common.Authorized False
-    _ -> Common.None
-
-form : Model -> Html Msg
-form model = case model.route of
-  Routes.Login -> map LoginFormMsg (Auth.LoginForm.view model.loginModel)
-  Routes.Signin -> map SigninFormMsg (Auth.SigninForm.view model.signinModel)
-
-authButton : Routes.AuthRoute -> Html Msg
+authButton : Route.AuthRoute -> Html Msg
 authButton route =
   case route of
-    (Routes.Login) -> Auth.SigninButton.view
-    (Routes.Signin) -> Auth.LoginButton.view
+    Route.Login -> Auth.SigninButton.view
+    Route.Signin -> Auth.LoginButton.view
 
-view : Model -> Html Msg
-view model =
-  div [style "display" "flex", style "flex-direction" "column", style "align-items" "center"]
-    [ authButton model.route
-    , form model
-    ]
+view : Model -> Shared.State.Model -> Html Msg
+view model { currentRoute } =
+  let
+    route = case currentRoute of
+      (Route.Auth r) -> r
+      _ -> Route.Login
+      in
+        div [style "display" "flex", style "flex-direction" "column", style "align-items" "center"]
+          [ authButton route
+          , form model route
+          ]

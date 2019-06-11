@@ -5,7 +5,7 @@ import Html.Styled exposing (div, h3, button, text, Html, input)
 import Html.Styled.Attributes exposing (type_, placeholder, required, value)
 import Html.Styled.Events exposing (onInput, onClick)
 import Common
-import Routes
+import Routes.Main as Routes
 import Json.Encode as JE
 import Json.Decode as JD
 
@@ -36,13 +36,3 @@ formInput p v toMsg =
   input
   [type_ "text", onInput toMsg, placeholder p, required True, value v]
   []
-
-inFormView : InFormModel -> String -> Html InFormMsg
-inFormView model formTitle =
-    div [] [
-      h3 [] [text formTitle]
-      , formInput "email" model.email Email
-      , formInput "password" model.password Password
-      , button [onClick Send] [text formTitle]
-      , div [] [text model.error]
-    ]
