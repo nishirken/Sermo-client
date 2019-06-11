@@ -7,17 +7,20 @@ import Auth.Common as AuthCommon
 import Common
 import App.Main as App
 import Routes.Main as Routes
+import Routes.Route as Route
+import Routes.Msg as RoutesMsg
 import Url exposing (Url)
 import Browser.Navigation exposing (Key)
 import LocalStorage
-import SharedState
+import Shared.Update exposing (Update, UpdateResult)
+import Shared.State
 
 type alias Model =
   { token : String
   , isAuthorized : Bool
-  , routes : Routes.Model
-  , pages : Pages
-  , sharedState : SharedState.Model
+  , routesModel : Routes.Model
+  , pagesModel : Pages
+  , sharedModel : Shared.State.Model
   }
 
 type alias Pages =
@@ -26,8 +29,8 @@ type alias Pages =
   }
 
 type Msg
-  = RouteMsg Routes.Msg
-  | StateMsg SharedState.Msg
+  = RouteMsg RoutesMsg.Msg
+  | StateMsg Shared.State.Msg
   | PageMsg PageMsg
 
 type PageMsg
@@ -39,8 +42,8 @@ main = Browser.application
   , update = update
   , view = view
   , subscriptions = \_ -> Sub.none
-  , onUrlRequest = \urlReq -> RouteMsg (Routes.LinkClicked urlReq)
-  , onUrlChange = \url -> RouteMsg (Routes.UrlChanged url)
+  , onUrlRequest = \urlReq -> RouteMsg (RoutesMsg.LinkClicked urlReq)
+  , onUrlChange = \url -> RouteMsg (RoutesMsg.UrlChanged url)
   }
 
 type alias Flags = { storageState : String }
@@ -49,55 +52,62 @@ init : Flags -> Url -> Key -> (Model, Cmd Msg)
 init { storageState } url key = let { authToken } = (LocalStorage.decodeModel storageState) in
   ({ token = authToken
   , isAuthorized = False
-  , routes = Routes.initialModel url key
-  , pages =
+  , routesModel = Routes.initialModel url
+  , pagesModel =
     { authModel = Auth.initialModel
     , appModel = App.initialModel
     }
-  , sharedState = let model = SharedState.initModel in { model | token = authToken }
+  , sharedModel = Shared.State.initialModel key
   }, Cmd.batch [Cmd.map (PageMsg << AuthMsg) Auth.initCmd, Cmd.map (PageMsg << AppMsg) App.initCmd])
 
+stateUpdate : Maybe Shared.State.Msg -> Shared.State.Model -> Shared.State.Model
+stateUpdate stateMsg model = case stateMsg of
+  (Just msg) -> Shared.State.update msg model
+  Nothing -> model
+
 update : Msg -> Model -> (Model, Cmd Msg)
-update msg model = let { routes, pages, sharedState } = model in
+update msg model = let { routesModel, pagesModel, sharedModel } = model in
   case msg of
     RouteMsg subMsg ->
-      let
-        (updatedModel, updatedCmd) = Routes.update subMsg routes
-        authRoute = case updatedModel.route of
-          (Routes.Auth subRoute) -> subRoute
-          _ -> sharedState.authModel.route in
-        ({ model | routesModel = updatedModel}, Cmd.map RouteMsg updatedCmd)
+      let { updatedModel, updatedCmd, stateMsg } = Routes.update subMsg routesModel sharedModel in
+        ( { model
+          | routesModel = updatedModel
+          , sharedModel = stateUpdate stateMsg sharedModel
+          }
+        , Cmd.map RouteMsg updatedCmd
+        ) 
     (PageMsg pageMsg) -> updatePage pageMsg model
     _ -> (model, Cmd.none)
 
 updatePage : PageMsg -> Model -> (Model, Cmd Msg)
-updatePage msg model =
-  let
-    { pages, sharedState } = model
-    stateUpdate stateMsg =
-      case stateMsg of
-        (Just m) -> SharedState.update m model.sharedState
-        Nothing -> model.sharedState
-    in
+updatePage msg model = let { pagesModel, sharedModel } = model in
   case msg of
-    AuthMsg subMsg -> let (updatedModel, subCmd, stateMsg) = Auth.update subMsg pages.authModel sharedState in
-      ( { model | pages = { pages | authModel = updatedModel }, sharedState = stateUpdate stateMsg }
-      , Cmd.map (PageMsg << AuthMsg) subCmd
-      )
-    AppMsg subMsg -> let (updatedModel, subCmd, stateMsg) = App.update subMsg pages.appModel sharedState in
-      ( { model | pages = { pages | appModel = updatedModel }, sharedState = stateUpdate stateMsg }
-      , Cmd.map (PageMsg << AppMsg) subCmd
-      )
+    AuthMsg subMsg ->
+      let { updatedModel, updatedCmd, stateMsg, routeCmd } = Auth.update subMsg pagesModel.authModel sharedModel in
+        ( { model
+          | pagesModel = { pagesModel | authModel = updatedModel }
+          , sharedModel = stateUpdate stateMsg sharedModel
+          }
+        , Cmd.batch [ Cmd.map (PageMsg << AuthMsg) updatedCmd, Cmd.map RouteMsg routeCmd ]
+        )
+    AppMsg subMsg ->
+      let { updatedModel, updatedCmd, stateMsg, routeCmd } = App.update subMsg pagesModel.appModel sharedModel in
+        ( { model
+          | pagesModel = { pagesModel | appModel = updatedModel }
+          , sharedModel = stateUpdate stateMsg sharedModel
+          }
+        , Cmd.batch [ Cmd.map (PageMsg << AppMsg) updatedCmd, Cmd.map RouteMsg routeCmd ]
+        )
 
 view : Model -> Browser.Document Msg
-view { routes, pages, sharedState } =
+view { pagesModel, sharedModel } =
   { title = "Sermo"
   , body = List.map toUnstyled [
       div [] [
-        case sharedState.currentRoute of
-          Routes.Auth _ -> map (PageMsg << AuthMsg) (Auth.view pages.authModel sharedState)
-          Routes.Application -> map (PageMsg << AppMsg) (App.view pages.appModel)
-          Routes.NotFound -> div [] [text "404 Not found"]  
+        case sharedModel.currentRoute of
+          Route.Auth _ -> map (PageMsg << AuthMsg) (Auth.view pagesModel.authModel sharedModel)
+          Route.Application -> map (PageMsg << AppMsg) (App.view pagesModel.appModel)
+          Route.NotFound -> div [] [text "404 Not found"]  
         ]
     ]
   }

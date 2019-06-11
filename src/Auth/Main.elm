@@ -14,8 +14,10 @@ import Auth.LoginButton
 import Auth.Logout
 import Common
 import Routes.Main as Routes
+import Routes.Route as Route
 import Task
-import SharedState
+import Shared.Update exposing (Update, UpdateResult)
+import Shared.State
 
 type alias Model =
   { loginModel : AuthCommon.InFormModel
@@ -37,40 +39,49 @@ initCmd = Task.perform (\_ -> AuthorizedSend) (Task.succeed ())
 authEncoder : String -> JsonEncode.Value
 authEncoder token = JsonEncode.object [("token", JsonEncode.string token)]
 
-update : Msg -> Model -> SharedState.Model -> (Model, Cmd Msg, Maybe SharedState.Msg)
-update msg model { token } =
+update : Update Msg Model
+update msg model sharedModel =
   case msg of
-    (LoginFormMsg subMsg) -> let (updatedModel, updatedCmd, stateMsg) = Auth.LoginForm.update subMsg model.loginModel in
-      ({ model | loginModel = updatedModel }, Cmd.map LoginFormMsg updatedCmd, stateMsg)
+    (LoginFormMsg subMsg) ->
+      let
+        updatedResult : UpdateResult AuthCommon.InFormModel AuthCommon.InFormMsg
+        updatedResult = Auth.LoginForm.update subMsg model.loginModel sharedModel
+        { updatedModel, updatedCmd, stateMsg, routeCmd } = updatedResult
+          in UpdateResult { model | loginModel = updatedModel } (Cmd.map LoginFormMsg updatedCmd) stateMsg routeCmd
     (SigninFormMsg subMsg) ->
-      let (updatedModel, updatedCmd, stateMsg) = Auth.SigninForm.update subMsg model.signinModel in
-        ({ model | signinModel = updatedModel }, Cmd.map SigninFormMsg updatedCmd, Nothing)
-    AuthorizedSend -> (model, Http.post
-      { url = "http://localhost:8080/auth"
-      , body = Http.jsonBody (authEncoder token)
-      , expect = Common.expectJsonResponse Common.successDecoder DataReseived
-      }, Nothing)
+      let
+        { updatedModel, updatedCmd, stateMsg, routeCmd } = Auth.SigninForm.update subMsg model.signinModel sharedModel in
+        UpdateResult { model | signinModel = updatedModel } (Cmd.map SigninFormMsg updatedCmd) stateMsg routeCmd
+    AuthorizedSend -> UpdateResult
+      model
+      (Http.post
+        { url = "http://localhost:8080/auth"
+        , body = Http.jsonBody (authEncoder sharedModel.token)
+        , expect = Common.expectJsonResponse Common.successDecoder DataReseived
+        })
+      Nothing
+      Cmd.none
     DataReseived result -> case Common.getJsonData result of
-      (Just isAuthorized) -> (model, Cmd.none, Just (SharedState.Authorized isAuthorized))
-      Nothing -> (model, Cmd.none, Nothing)
+      (Just isAuthorized) -> UpdateResult model Cmd.none (Just (Shared.State.Authorized isAuthorized)) Cmd.none
+      Nothing -> UpdateResult model Cmd.none Nothing Cmd.none
 
-form : Model -> Routes.AuthRoute -> Html Msg
+form : Model -> Route.AuthRoute -> Html Msg
 form { loginModel, signinModel } authRoute = case authRoute of
-  Routes.Login -> map LoginFormMsg (Auth.LoginForm.view loginModel)
-  Routes.Signin -> map SigninFormMsg (Auth.SigninForm.view signinModel)
+  Route.Login -> map LoginFormMsg (Auth.LoginForm.view loginModel)
+  Route.Signin -> map SigninFormMsg (Auth.SigninForm.view signinModel)
 
-authButton : Routes.AuthRoute -> Html Msg
+authButton : Route.AuthRoute -> Html Msg
 authButton route =
   case route of
-    (Routes.Login) -> Auth.SigninButton.view
-    (Routes.Signin) -> Auth.LoginButton.view
+    Route.Login -> Auth.SigninButton.view
+    Route.Signin -> Auth.LoginButton.view
 
-view : Model -> SharedState.Model -> Html Msg
+view : Model -> Shared.State.Model -> Html Msg
 view model { currentRoute } =
   let
     route = case currentRoute of
-      (Routes.Auth r) -> r
-      _ -> Routes.Login
+      (Route.Auth r) -> r
+      _ -> Route.Login
       in
         div [style "display" "flex", style "flex-direction" "column", style "align-items" "center"]
           [ authButton route

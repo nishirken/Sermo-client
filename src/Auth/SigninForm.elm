@@ -7,44 +7,48 @@ import Http
 import Html.Styled exposing (Html, toUnstyled, div, h3, button, text, Html)
 import Html.Styled.Events exposing (onInput, onClick)
 import Routes.Main as Routes
+import Routes.Route as Route
 import LocalStorage
-import SharedState
+import Shared.Update exposing (Update, UpdateResult)
+import Shared.State
 
-update :
-  AuthCommon.InFormMsg ->
-  AuthCommon.InFormModel ->
-  (AuthCommon.InFormModel, Cmd AuthCommon.InFormMsg, Maybe SharedState.Msg)
-update msg model =
+update : Update AuthCommon.InFormMsg AuthCommon.InFormModel
+update msg model { navigationKey } =
   case msg of
-    AuthCommon.Email email -> ({ model | email = email }, Cmd.none, Nothing)
-    AuthCommon.Password password -> ({ model | password = password }, Cmd.none, Nothing)
-    AuthCommon.Send -> (model, Http.post
-      { url = "http://localhost:8080/signin"
-      , body = AuthCommon.inRequest model
-      , expect = Common.expectJsonResponse AuthCommon.authDecoder AuthCommon.DataReseived
-      }, Nothing)
+    AuthCommon.Email email -> UpdateResult { model | email = email } Cmd.none Nothing Cmd.none
+    AuthCommon.Password password -> UpdateResult { model | password = password } Cmd.none Nothing Cmd.none
+    AuthCommon.Send -> UpdateResult
+      model
+      (Http.post
+        { url = "http://localhost:8080/signin"
+        , body = AuthCommon.inRequest model
+        , expect = Common.expectJsonResponse AuthCommon.authDecoder AuthCommon.DataReseived
+        })
+      Nothing
+      Cmd.none
     AuthCommon.DataReseived result ->
       case result of
         Ok res -> let error = Common.getJsonError result in
           case error of
-            (Just e) -> ({ model | error = Maybe.withDefault "" e.message }, Cmd.none, Nothing)
+            (Just e) -> UpdateResult { model | error = Maybe.withDefault "" e.message } Cmd.none Nothing Cmd.none
             Nothing -> let data = Common.getJsonData result in
               case data of
                 (Just response) ->
-                  ( AuthCommon.initialInFormModel
-                  , LocalStorage.writeModel (LocalStorage.LocalStorageState response.token)
-                  , Just (SharedState.Login response)
-                  )
-                Nothing -> (model, Cmd.none, Nothing)
+                  UpdateResult
+                    AuthCommon.initialInFormModel
+                    (LocalStorage.writeModel (LocalStorage.LocalStorageState response.token))
+                    (Just (Shared.State.Login response))
+                    (Routes.goToRoute navigationKey Route.Application)
+                Nothing -> UpdateResult model Cmd.none Nothing Cmd.none
         Err httpError ->
-            ({ model | error = Common.errorMessage httpError }, Cmd.none, Nothing)
+          UpdateResult { model | error = Common.errorMessage httpError } Cmd.none Nothing Cmd.none
 
 view : AuthCommon.InFormModel -> Html AuthCommon.InFormMsg
 view model =
   div [] [
-    h3 [] [text "Login"]
+    h3 [] [text "Signin"]
     , AuthCommon.formInput "email" model.email AuthCommon.Email
     , AuthCommon.formInput "password" model.password AuthCommon.Password
-    , button [onClick AuthCommon.Send] [text "login"]
+    , button [onClick AuthCommon.Send] [text "signin"]
     , div [] [text model.error]
     ]

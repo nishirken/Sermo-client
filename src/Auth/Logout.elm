@@ -6,7 +6,10 @@ import Html
 import Html.Styled.Events exposing (onClick)
 import LocalStorage
 import Html.Styled exposing (Html, toUnstyled, button, text)
-import SharedState
+import Shared.Update exposing (Update, UpdateResult)
+import Shared.State
+import Routes.Main exposing (goToRoute)
+import Routes.Route exposing (Route (..), AuthRoute (..))
 
 type alias Model = {}
 
@@ -15,8 +18,12 @@ type Msg = Logout
 initialModel : Model
 initialModel = {}
 
-update : Msg -> Model -> (Model, Cmd Msg, Maybe SharedState.Msg)
-update _ model = (model, LocalStorage.writeModel (LocalStorage.LocalStorageState ""), Just SharedState.Logout)
+update : Update Msg Model
+update _ model { navigationKey } = UpdateResult
+  model
+  (LocalStorage.writeModel (LocalStorage.LocalStorageState ""))
+  (Just Shared.State.Logout)
+  (goToRoute navigationKey (Auth Login))
 
 view : Model -> Html Msg
 view _ =

@@ -7,12 +7,10 @@ import Url.Parser exposing (Parser, parse, map, oneOf, top, s)
 import Browser.Navigation exposing (Key, pushUrl, load)
 import Common exposing (GlobalMsg (..), withLog)
 import Task
-import SharedState
+import Shared.Update exposing (Update, UpdateResult)
+import Shared.State
 import Routes.Route exposing (..)
-
-type Msg
-  = LinkClicked UrlRequest
-  | UrlChanged Url
+import Routes.Msg exposing (..)
 
 type alias Model = { url : Url }
 
@@ -36,27 +34,26 @@ matchRoute =
 toRoute : Url -> Route
 toRoute url = Maybe.withDefault NotFound (parse matchRoute url)
 
-routeToUrl : Route -> Url -> Url
-routeToUrl route currentUrl =
-  let stringUrl = case route of
-    Auth subRoute -> case subRoute of
-      Signin -> relative ["signin"] []
-      Login -> relative ["login"] []
-    Application -> relative ["/"] []
-    NotFound -> relative ["404"] [] in (Maybe.withDefault (fromString stringUrl) currentUrl)
+routeToUrl : Route -> String
+routeToUrl route = case route of
+  (Auth subRoute) -> case subRoute of
+    Signin -> relative ["signin"] []
+    Login -> relative ["login"] []
+  Application -> relative ["/"] []
+  NotFound -> relative ["404"] []
 
-update : Msg -> Model -> SharedState.Model -> (Model, Cmd Msg, Maybe SharedState.Msg)
+update : Update Msg Model
 update msg model sharedModel = case msg of
   LinkClicked urlRequest ->
     case urlRequest of
       Internal url ->
-        (model, pushUrl sharedModel.navigationKey (toString url), Nothing)
+        UpdateResult model (pushUrl sharedModel.navigationKey (toString url)) Nothing Cmd.none
       External href ->
-        (model, load href, Nothing)
+        UpdateResult model (load href) Nothing Cmd.none
   UrlChanged url ->
-    ({ model | url = url }, Cmd.none, Just (SharedState.RouteChanged (toRoute url)))
+    UpdateResult { model | url = url } Cmd.none (Just (Shared.State.RouteChanged (toRoute url))) Cmd.none
 
-type alias GoToRoute = Route -> Msg
+type alias GoToRoute = Key -> Route -> Cmd Msg
 
 goToRoute : GoToRoute
-goToRoute route = LinkClicked (Internal (routeToUrl route))
+goToRoute key route = pushUrl key (routeToUrl route)

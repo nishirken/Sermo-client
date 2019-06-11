@@ -12,7 +12,8 @@ import App.Queries.User as UserQuery
 import App.Styles as Styles
 import Html.Styled exposing (Html, toUnstyled, div, text, map)
 import Task
-import SharedState
+import Shared.Update exposing (Update, UpdateResult)
+import Shared.State
 
 type alias Model =
   { user : User
@@ -41,20 +42,24 @@ type Msg
   | ChatMsg Chat.Msg
   | TextAreaMsg TextArea.Msg
 
-update : Msg -> Model -> (Model, Cmd Msg, Maybe SharedState.Msg)
-update msg model =
+update : Update Msg Model
+update msg model sharedModel =
   case msg of
-    (LogoutMsg subMsg) -> let (updatedModel, updatedCmd, stateMsg) = Logout.update subMsg model.logoutModel in
-      ({ model | logoutModel = updatedModel }, Cmd.map LogoutMsg updatedCmd, stateMsg)
-    DataReceived result -> let errorRes = ({ model | error = "Error with user load" }, Cmd.none, Nothing) in
-      case result of
-        Ok res -> case res of
-          (Just user) -> ({ model | user = user, friendsListModel = { friends = user.friends } }, Cmd.none, Nothing)
-          Nothing -> errorRes
-        Err httpError -> errorRes
-    _ -> (model, Cmd.none, Nothing)
+    (LogoutMsg subMsg) ->
+      let
+        { updatedModel, updatedCmd, stateMsg, routeCmd } = Logout.update subMsg model.logoutModel sharedModel in
+          UpdateResult { model | logoutModel = updatedModel } (Cmd.map LogoutMsg updatedCmd) stateMsg routeCmd
+    DataReceived result ->
+      let errorRes = UpdateResult { model | error = "Error with user load" } Cmd.none Nothing Cmd.none in
+        case result of
+          Ok res -> case res of
+            (Just user) -> UpdateResult
+              { model | user = user, friendsListModel = { friends = user.friends } } Cmd.none Nothing Cmd.none
+            Nothing -> errorRes
+          Err httpError -> errorRes
+    _ -> UpdateResult model Cmd.none Nothing Cmd.none
 
-loadUser : SharedState.Model -> Cmd Msg
+loadUser : Shared.State.Model -> Cmd Msg
 loadUser { userId, token } = case userId of
   (Just id) -> Common.makeGraphQLRequest DataReceived (UserQuery.query id) token
   Nothing -> Cmd.none
