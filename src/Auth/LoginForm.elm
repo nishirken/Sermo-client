@@ -4,52 +4,50 @@ import Browser
 import Auth.Common as AuthCommon
 import Common
 import Http
-import Html
-import Routes
-import Json.Decode as JsonDecode
+import Html.Styled exposing (Html, toUnstyled, div, h3, button, text, Html)
+import Html.Styled.Events exposing (onInput, onClick)
+import Routes.Main as Routes
+import Routes.Route as Route
 import LocalStorage
+import Shared.Update exposing (Update, UpdateResult)
+import Shared.State
 
-main = Browser.element
-  { init = \() -> (AuthCommon.initialInFormModel, Cmd.none)
-  , update = update
-  , view = view
-  , subscriptions = \_ -> Sub.none
-  }
-
-type alias LoginFormMsg = AuthCommon.InFormMsg String
-
-loginDecoder : JsonDecode.Decoder String
-loginDecoder = JsonDecode.field "token" JsonDecode.string
-
-update : LoginFormMsg -> AuthCommon.InFormModel -> (AuthCommon.InFormModel, Cmd LoginFormMsg)
-update msg model =
+update : Update AuthCommon.InFormMsg AuthCommon.InFormModel
+update msg model { navigationKey } =
   case msg of
-    AuthCommon.Email email -> ({ model | email = email }, Cmd.none)
-    AuthCommon.Password password -> ({ model | password = password }, Cmd.none)
-    AuthCommon.Send -> (model, Http.post
-      { url = "http://localhost:8080/login"
-      , body = AuthCommon.inRequest model
-      , expect = Common.expectJsonResponse loginDecoder AuthCommon.DataReseived
-      })
+    AuthCommon.Email email -> UpdateResult { model | email = email } Cmd.none Nothing Cmd.none
+    AuthCommon.Password password -> UpdateResult { model | password = password } Cmd.none Nothing Cmd.none
+    AuthCommon.Send -> UpdateResult
+      model
+      (Http.post
+        { url = "http://localhost:8080/login"
+        , body = AuthCommon.inRequest model
+        , expect = Common.expectJsonResponse AuthCommon.authDecoder AuthCommon.DataReseived
+        })
+      Nothing
+      Cmd.none
     AuthCommon.DataReseived result -> let initModel = AuthCommon.initialInFormModel in
       case result of
         Ok res -> let error = Common.getJsonError result in
           case error of
-            (Just e) -> ({ model | error = Maybe.withDefault "" e.message }, Cmd.none)
+            (Just e) -> UpdateResult { model | error = Maybe.withDefault "" e.message } Cmd.none Nothing Cmd.none
             Nothing -> let data = Common.getJsonData result in
               case data of
-                (Just token) -> (initModel, LocalStorage.writeModel (LocalStorage.LocalStorageState token))
-                Nothing -> (model, Cmd.none)
+                (Just response) -> UpdateResult
+                  initModel
+                  (LocalStorage.writeModel (LocalStorage.LocalStorageState response.token))
+                  (Just (Shared.State.Login response))
+                  (Routes.goToRoute navigationKey Route.Application)
+                Nothing -> UpdateResult model Cmd.none Nothing Cmd.none
         Err httpError ->
-            ({ model | error = Common.errorMessage httpError }, Cmd.none)
+          UpdateResult { model | error = Common.errorMessage httpError } Cmd.none Nothing Cmd.none
 
-outMsg : LoginFormMsg -> Common.GlobalMsg
-outMsg msg =
-  case msg of
-    (AuthCommon.DataReseived res) -> let data = Common.getJsonData res in case data of
-      (Just token) -> Common.LoginSuccess token
-      Nothing -> Common.None
-    _ -> Common.None
-
-view : AuthCommon.InFormModel -> Html.Html LoginFormMsg
-view model = AuthCommon.inFormView model "Login"
+view : AuthCommon.InFormModel -> Html AuthCommon.InFormMsg
+view model =
+  div [] [
+    h3 [] [text "Login"]
+    , AuthCommon.formInput "email" model.email AuthCommon.Email
+    , AuthCommon.formInput "password" model.password AuthCommon.Password
+    , button [onClick AuthCommon.Send] [text "login"]
+    , div [] [text model.error]
+    ]

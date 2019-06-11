@@ -5,12 +5,17 @@
   "main": "index.js",
   "bin": "index.js",
   "dependencies": {
-    "elm": "^0.19.0",
-    "elm-live": "^3.4.0"
+    "elm": "^0.19.0-no-deps",
+    "elm-live": "^3.4.1",
+    "fs-extra": "^8.0.1",
+    "request-promise": "^4.2.4"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@dillonkearns/elm-graphql": "^3.6.0"
+  },
   "scripts": {
-    "start": "elm-live src/Main.elm -u --start-page=custom.html -- --output=dist/elm.js"
+    "start": "elm-live src/Main.elm -u --start-page=custom.html -- --output=dist/elm.js",
+    "generate": "elm-graphql http://localhost:8080/graphql --base Schemas --header 'Origin':'localhost'"
   },
   "repository": {
     "type": "git",

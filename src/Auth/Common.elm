@@ -1,12 +1,13 @@
 module Auth.Common exposing (..)
 
 import Http
-import Html exposing (div, h3, button, text)
-import Html.Attributes exposing (type_, placeholder, required, value)
-import Html.Events exposing (onInput, onClick)
+import Html.Styled exposing (div, h3, button, text, Html, input)
+import Html.Styled.Attributes exposing (type_, placeholder, required, value)
+import Html.Styled.Events exposing (onInput, onClick)
 import Common
-import Routes
-import Json.Encode as E
+import Routes.Main as Routes
+import Json.Encode as JE
+import Json.Decode as JD
 
 initialInFormModel = InFormModel "" "" ""
 
@@ -16,28 +17,22 @@ type alias InFormModel =
   , error : String
   }
 
-type InFormMsg a
+type InFormMsg
   = Send
   | Email String
   | Password String
-  | DataReseived (Result Http.Error (Common.JSONResponse a))
+  | DataReseived (Result Http.Error (Common.JSONResponse Common.AuthResponse))
+
+authDecoder : JD.Decoder Common.AuthResponse
+authDecoder = JD.map2 Common.AuthResponse
+  (JD.field "id" JD.int) (JD.field "token" JD.string)
 
 inRequest : InFormModel -> Http.Body
 inRequest { email, password } =
-  Http.jsonBody (E.object [("email", E.string email), ("password", E.string password)])
+  Http.jsonBody (JE.object [("email", JE.string email), ("password", JE.string password)])
 
-formInput : String -> String -> (String -> msg) -> Html.Html msg
+formInput : String -> String -> (String -> msg) -> Html msg
 formInput p v toMsg =
-  Html.input
+  input
   [type_ "text", onInput toMsg, placeholder p, required True, value v]
   []
-
-inFormView : InFormModel -> String -> Html.Html (InFormMsg a)
-inFormView model formTitle =
-    div [] [
-        h3 [] [text formTitle]
-        , formInput "email" model.email Email
-        , formInput "password" model.password Password
-        , button [onClick Send] [text formTitle]
-        , div [] [text model.error]
-    ]
