@@ -16,9 +16,7 @@ import Shared.Update exposing (Update, UpdateResult)
 import Shared.State
 
 type alias Model =
-  { token : String
-  , isAuthorized : Bool
-  , routesModel : Routes.Model
+  { routesModel : Routes.Model
   , pagesModel : Pages
   , sharedModel : Shared.State.Model
   }
@@ -50,15 +48,15 @@ type alias Flags = { storageState : String }
 
 init : Flags -> Url -> Key -> (Model, Cmd Msg)
 init { storageState } url key = let { authToken } = (LocalStorage.decodeModel storageState) in
-  ({ token = authToken
-  , isAuthorized = False
-  , routesModel = Routes.initialModel url
-  , pagesModel =
-    { authModel = Auth.initialModel
-    , appModel = App.initialModel
+  ( { routesModel = Routes.initialModel url
+    , pagesModel =
+      { authModel = Auth.initialModel
+      , appModel = App.initialModel
+      }
+    , sharedModel = Shared.State.initialModel key authToken
     }
-  , sharedModel = Shared.State.initialModel key
-  }, Cmd.batch [Cmd.map (PageMsg << AuthMsg) Auth.initCmd, Cmd.map (PageMsg << AppMsg) App.initCmd])
+  , Cmd.batch [ Cmd.map (PageMsg << AuthMsg) Auth.initCmd, Cmd.map (PageMsg << AppMsg) App.initCmd ]
+  )
 
 stateUpdate : Maybe Shared.State.Msg -> Shared.State.Model -> Shared.State.Model
 stateUpdate stateMsg model = case stateMsg of
