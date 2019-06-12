@@ -21,7 +21,7 @@ initialModel = {}
 update : Update Msg Model
 update _ model { navigationKey } = UpdateResult
   model
-  (LocalStorage.writeModel (LocalStorage.LocalStorageState ""))
+  (LocalStorage.writeModel (LocalStorage.LocalStorageState "" Nothing))
   (Just Shared.State.Logout)
   (goToRoute navigationKey (Auth Login))
 

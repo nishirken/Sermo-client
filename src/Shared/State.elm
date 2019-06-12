@@ -18,12 +18,12 @@ type alias Model =
   , currentRoute : Route.Route
   }
 
-initialModel : Key -> String -> Model
-initialModel key token =
+initialModel : Key -> String -> Maybe Int -> Model
+initialModel key token userId =
   { navigationKey = key
   , token = token
   , isAuthorized = False
-  , userId = Nothing
+  , userId = userId
   , currentRoute = Route.Auth Route.Login
   }
 

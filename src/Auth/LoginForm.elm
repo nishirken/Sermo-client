@@ -35,7 +35,7 @@ update msg model { navigationKey } =
               case data of
                 (Just response) -> UpdateResult
                   initModel
-                  (LocalStorage.writeModel (LocalStorage.LocalStorageState response.token))
+                  (LocalStorage.writeModel (LocalStorage.LocalStorageState response.token (Just response.id)))
                   (Just (Shared.State.Login response))
                   (Routes.goToRoute navigationKey Route.Application)
                 Nothing -> UpdateResult model Cmd.none Nothing Cmd.none

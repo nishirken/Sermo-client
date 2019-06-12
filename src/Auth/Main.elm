@@ -45,9 +45,7 @@ update msg model sharedModel =
   case msg of
     (LoginFormMsg subMsg) ->
       let
-        updatedResult : UpdateResult AuthCommon.InFormModel AuthCommon.InFormMsg
-        updatedResult = Auth.LoginForm.update subMsg model.loginModel sharedModel
-        { updatedModel, updatedCmd, stateMsg, routeCmd } = updatedResult
+        { updatedModel, updatedCmd, stateMsg, routeCmd } = Auth.LoginForm.update subMsg model.loginModel sharedModel
           in UpdateResult { model | loginModel = updatedModel } (Cmd.map LoginFormMsg updatedCmd) stateMsg routeCmd
     (SigninFormMsg subMsg) ->
       let
