@@ -8,6 +8,7 @@ import Common
 import Routes.Main as Routes
 import Json.Encode as JE
 import Json.Decode as JD
+import Styles
 
 initialInFormModel = InFormModel "" "" ""
 
@@ -31,8 +32,8 @@ inRequest : InFormModel -> Http.Body
 inRequest { email, password } =
   Http.jsonBody (JE.object [("email", JE.string email), ("password", JE.string password)])
 
-formInput : String -> String -> (String -> msg) -> Html msg
-formInput p v toMsg =
-  input
-  [type_ "text", onInput toMsg, placeholder p, required True, value v]
+formInput : String -> String -> String -> (String -> msg) -> Html msg
+formInput p v inputType toMsg =
+  Styles.styledInput
+  [type_ inputType, onInput toMsg, placeholder p, required True, value v]
   []

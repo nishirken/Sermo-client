@@ -11,6 +11,8 @@ import Routes.Route as Route
 import LocalStorage
 import Shared.Update exposing (Update, UpdateResult)
 import Shared.State
+import Styles
+import Auth.Styles as AuthStyles
 
 update : Update AuthCommon.InFormMsg AuthCommon.InFormModel
 update msg model { navigationKey } =
@@ -46,9 +48,9 @@ update msg model { navigationKey } =
 view : AuthCommon.InFormModel -> Html AuthCommon.InFormMsg
 view model =
   div [] [
-    h3 [] [text "Signin"]
-    , AuthCommon.formInput "email" model.email AuthCommon.Email
-    , AuthCommon.formInput "password" model.password AuthCommon.Password
-    , button [onClick AuthCommon.Send] [text "signin"]
-    , div [] [text model.error]
+    Styles.title [] [ text "Signin" ]
+    , AuthStyles.formRow [] [ AuthCommon.formInput "email" "email" model.email AuthCommon.Email ]
+    , AuthStyles.formRow [] [ AuthCommon.formInput "password" "password" model.password AuthCommon.Password ]
+    , AuthStyles.formRow [] [ Styles.styledButton [ onClick AuthCommon.Send ] [text "signin"] ]
+    , Styles.errorTitle [] [ text model.error ]
     ]

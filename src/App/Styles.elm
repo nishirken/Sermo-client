@@ -2,13 +2,6 @@ module App.Styles exposing (..)
 
 import Css exposing (..)
 import Html.Styled exposing (..)
-import Common
-
-title : List (Attribute msg) -> List (Html msg) -> Html msg
-title = styled h1
-  [ fontSize (px 30)
-  , marginBottom (px 200)
-  ]
 
 appContainer : List (Attribute msg) -> List (Html msg) -> Html msg
 appContainer = styled div

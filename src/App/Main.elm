@@ -14,6 +14,7 @@ import Html.Styled exposing (Html, toUnstyled, div, text, map)
 import Task
 import Shared.Update exposing (Update, UpdateResult)
 import Shared.State
+import Styles
 
 type alias Model =
   { user : User
