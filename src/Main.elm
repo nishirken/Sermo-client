@@ -16,6 +16,7 @@ import LocalStorage
 import Shared.Update exposing (Update, UpdateResult)
 import Shared.State
 import Styles
+import Icons
 
 type alias Model =
   { routesModel : Routes.Model
@@ -120,7 +121,8 @@ view { pagesModel, sharedModel } =
           Route.Auth _ -> map (PageMsg << AuthMsg) (Auth.view pagesModel.authModel sharedModel)
           Route.Application -> map (PageMsg << AppMsg) (App.view pagesModel.appModel)
           Route.NotFound -> div [] [text "404 Not found"]
-      , Styles.logoBackdrop [] []
+      , Styles.logoBackdrop []
+        [ Styles.logoIconWrapper [] [ Icons.logoIcon ] ]
       ]
     , Styles.globalStyles
     ]

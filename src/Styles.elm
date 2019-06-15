@@ -99,6 +99,17 @@ logoBackdrop = let s = 200 in
     , backgroundColor <| getColor Text
     ]
 
+logoSize = px 40
+
+logoIconWrapper : List (Attribute msg) -> List (Html msg) -> Html msg
+logoIconWrapper = styled div
+  [ position absolute
+  , bottom <| pct 0
+  , right <| pct 0
+  , width logoSize
+  , height logoSize
+  ]
+
 absoluteButton : List (Attribute msg) -> List (Html msg) -> Html msg
 absoluteButton = styled styledButton
   [ position absolute
