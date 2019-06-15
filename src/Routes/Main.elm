@@ -53,7 +53,16 @@ update msg model sharedModel = case msg of
   UrlChanged url ->
     UpdateResult { model | url = url } Cmd.none (Just (Shared.State.RouteChanged (toRoute url))) Cmd.none
 
-type alias GoToRoute = Key -> Route -> Cmd Msg
-
-goToRoute : GoToRoute
+goToRoute : Key -> Route -> Cmd Msg
 goToRoute key route = pushUrl key (routeToUrl route)
+
+type alias GoToRoute = Key -> Cmd Msg
+
+goToLogin : GoToRoute
+goToLogin key = goToRoute key (Auth Login)
+
+goToSignin : GoToRoute
+goToSignin key = goToRoute key (Auth Signin)
+
+goToApp : GoToRoute
+goToApp key = goToRoute key Application

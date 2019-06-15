@@ -13,6 +13,7 @@ import Auth.Logout
 import Auth.Buttons
 import Common
 import Routes.Main as Routes
+import Routes.Msg as RoutesMsg
 import Routes.Route as Route
 import Task
 import Shared.Update exposing (Update, UpdateResult)
@@ -43,9 +44,7 @@ update msg model sharedModel =
   case msg of
     (LoginFormMsg subMsg) ->
       let
-        updatedResult : UpdateResult AuthCommon.InFormModel AuthCommon.InFormMsg
-        updatedResult = Auth.LoginForm.update subMsg model.loginModel sharedModel
-        { updatedModel, updatedCmd, stateMsg, routeCmd } = updatedResult
+        { updatedModel, updatedCmd, stateMsg, routeCmd } = Auth.LoginForm.update subMsg model.loginModel sharedModel
           in UpdateResult { model | loginModel = updatedModel } (Cmd.map LoginFormMsg updatedCmd) stateMsg routeCmd
     (SigninFormMsg subMsg) ->
       let
@@ -61,8 +60,16 @@ update msg model sharedModel =
       Nothing
       Cmd.none
     DataReseived result -> case Common.getJsonData result of
-      (Just isAuthorized) -> UpdateResult model Cmd.none (Just (Shared.State.Authorized isAuthorized)) Cmd.none
-      Nothing -> UpdateResult model Cmd.none Nothing Cmd.none
+      (Just isAuthorized) -> UpdateResult
+        model
+        Cmd.none
+        (Just (Shared.State.Authorized isAuthorized))
+        ((if isAuthorized then Routes.goToApp else Routes.goToLogin) sharedModel.navigationKey)
+      Nothing -> UpdateResult
+        model
+        Cmd.none
+        Nothing
+        (Routes.goToLogin sharedModel.navigationKey)
 
 form : Model -> Route.AuthRoute -> Html Msg
 form { loginModel, signinModel } authRoute = case authRoute of

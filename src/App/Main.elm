@@ -14,6 +14,7 @@ import Task
 import Shared.Update exposing (Update, UpdateResult)
 import Shared.State
 import App.Styles as AppStyles
+import Routes.Route
 
 type alias Model =
   { user : User
@@ -36,15 +37,26 @@ initialModel =
 initCmd = Cmd.none
 
 type Msg
-  = DataReceived (Result Http.Error (Maybe User))
+  = InitialLoad
+  | DataReceived (Result Http.Error (Maybe User))
   | LogoutMsg Logout.Msg
   | FriendsListMsg FriendsList.Msg
   | MessagesMsg Messages.Msg
   | TextAreaMsg TextArea.Msg
 
+initMsg : Msg
+initMsg = InitialLoad
+
 update : Update Msg Model
-update msg model sharedModel =
+update msg model sharedModel = let { token, userId } = sharedModel in
   case msg of
+    InitialLoad -> case userId of
+      (Just id) -> UpdateResult
+        model
+        (Common.makeGraphQLRequest DataReceived (UserQuery.query id) token)
+        Nothing
+        Cmd.none
+      Nothing -> UpdateResult model Cmd.none Nothing Cmd.none
     (LogoutMsg subMsg) ->
       let
         { updatedModel, updatedCmd, stateMsg, routeCmd } = Logout.update subMsg model.logoutModel sharedModel in
@@ -58,11 +70,6 @@ update msg model sharedModel =
             Nothing -> errorRes
           Err httpError -> errorRes
     _ -> UpdateResult model Cmd.none Nothing Cmd.none
-
-loadUser : Shared.State.Model -> Cmd Msg
-loadUser { userId, token } = case userId of
-  (Just id) -> Common.makeGraphQLRequest DataReceived (UserQuery.query id) token
-  Nothing -> Cmd.none
 
 view : Model -> Html Msg
 view { logoutModel, friendsListModel, messagesModel, textAreaModel } = AppStyles.appContainer []

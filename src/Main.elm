@@ -2,6 +2,7 @@ module Main exposing (..)
 
 import Browser
 import Html.Styled exposing (text, h1, div, toUnstyled, map)
+import Html.Styled.Lazy exposing (lazy)
 import Auth.Main as Auth
 import Auth.Common as AuthCommon
 import Common
@@ -17,9 +18,7 @@ import Shared.State
 import Styles
 
 type alias Model =
-  { token : String
-  , isAuthorized : Bool
-  , routesModel : Routes.Model
+  { routesModel : Routes.Model
   , pagesModel : Pages
   , sharedModel : Shared.State.Model
   }
@@ -50,32 +49,44 @@ main = Browser.application
 type alias Flags = { storageState : String }
 
 init : Flags -> Url -> Key -> (Model, Cmd Msg)
-init { storageState } url key = let { authToken } = (LocalStorage.decodeModel storageState) in
-  ({ token = authToken
-  , isAuthorized = False
-  , routesModel = Routes.initialModel url
-  , pagesModel =
-    { authModel = Auth.initialModel
-    , appModel = App.initialModel
+init { storageState } url key = let { authToken, userId } = (LocalStorage.decodeModel storageState) in
+  ( { routesModel = Routes.initialModel url
+    , pagesModel =
+      { authModel = Auth.initialModel
+      , appModel = App.initialModel
+      }
+    , sharedModel = Shared.State.initialModel key authToken userId
     }
-  , sharedModel = Shared.State.initialModel key
-  }, Cmd.batch [Cmd.map (PageMsg << AuthMsg) Auth.initCmd, Cmd.map (PageMsg << AppMsg) App.initCmd])
+    , Cmd.batch [ Cmd.map (PageMsg << AuthMsg) Auth.initCmd, Cmd.map (PageMsg << AppMsg) App.initCmd ]
+  )
 
 stateUpdate : Maybe Shared.State.Msg -> Shared.State.Model -> Shared.State.Model
 stateUpdate stateMsg model = case stateMsg of
   (Just msg) -> Shared.State.update msg model
   Nothing -> model
 
+appInit : Maybe Shared.State.Msg -> App.Model -> Shared.State.Model -> UpdateResult App.Model App.Msg
+appInit stateMsg appModel sharedModel = let empty = UpdateResult appModel Cmd.none Nothing Cmd.none in
+  case stateMsg of
+    (Just x) -> case x of
+      (Shared.State.RouteChanged route) ->
+        if route == Route.Application then App.update App.initMsg appModel sharedModel else empty
+      _ -> empty
+    Nothing -> empty
+
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model = let { routesModel, pagesModel, sharedModel } = model in
   case msg of
     RouteMsg subMsg ->
-      let { updatedModel, updatedCmd, stateMsg } = Routes.update subMsg routesModel sharedModel in
+      let
+        { updatedModel, updatedCmd, stateMsg } = Routes.update subMsg routesModel sharedModel
+        appUpdate = appInit stateMsg pagesModel.appModel sharedModel in
         ( { model
           | routesModel = updatedModel
           , sharedModel = stateUpdate stateMsg sharedModel
+          , pagesModel = { pagesModel | appModel = appUpdate.updatedModel }
           }
-        , Cmd.map RouteMsg updatedCmd
+        , Cmd.batch [ Cmd.map RouteMsg updatedCmd, Cmd.map (PageMsg << AppMsg) appUpdate.updatedCmd ]
         ) 
     (PageMsg pageMsg) -> updatePage pageMsg model
     _ -> (model, Cmd.none)
