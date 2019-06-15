@@ -2,7 +2,6 @@ module App.TextArea exposing (..)
 
 import Browser
 import Html.Styled exposing (Html, input, toUnstyled)
-import Html.Styled.Attributes exposing (type_)
 import Html.Styled.Events exposing (onInput)
 import App.Styles as Styles
 
@@ -27,4 +26,7 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-  Styles.chatTextArea [type_ "textarea", onInput OnInput] []
+  Styles.chatTextArea
+    [ onInput OnInput
+    ]
+    []

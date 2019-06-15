@@ -1,8 +1,8 @@
 module App.Messages exposing (..)
 
 import Browser
-import Html.Styled exposing (Html, div, text, toUnstyled)
-import App.Styles as Styles
+import Html.Styled exposing (Html, text)
+import App.Styles as AppStyles
 
 type Msg = None
 
@@ -21,7 +21,8 @@ update : Msg -> Model -> Model
 update _ model = model
 
 messageView : String -> Html msg
-messageView t = Styles.message True [] [ text t ]
+messageView t = AppStyles.messageRow []
+  [ AppStyles.styledMessage True [] [ text t ] ]
 
 view : Model -> Html Msg
-view model = Styles.messages [] <| List.map messageView model.messages
+view model = AppStyles.styledMessages [] <| List.map messageView model.messages

@@ -73,10 +73,10 @@ update msg model sharedModel = let { token, userId } = sharedModel in
 
 view : Model -> Html Msg
 view { logoutModel, friendsListModel, messagesModel, textAreaModel } = AppStyles.appContainer []
-  [ map FriendsListMsg (FriendsList.view friendsListModel)
+  [ map FriendsListMsg <| FriendsList.view friendsListModel
   , AppStyles.chatContainer []
-    [ map MessagesMsg (Messages.view messagesModel)
-    , map TextAreaMsg (TextArea.view textAreaModel)
+    [ map MessagesMsg <| Messages.view messagesModel
+    , map TextAreaMsg <| TextArea.view textAreaModel
     ]
   , map LogoutMsg (Logout.view logoutModel)
   ]

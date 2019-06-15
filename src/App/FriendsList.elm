@@ -1,15 +1,9 @@
 module App.FriendsList exposing (..)
 
 import Browser
-import Html.Styled exposing (Html, div, text, toUnstyled)
+import Html.Styled exposing (Html, text)
 import App.Models.Friend exposing (Friend)
 import App.Styles as AppStyles
-
-main = Browser.sandbox
-  { init = initialModel
-  , update = update
-  , view = toUnstyled << view
-  }
 
 type Msg = None
 
