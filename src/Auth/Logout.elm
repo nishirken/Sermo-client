@@ -10,6 +10,7 @@ import Shared.Update exposing (Update, UpdateResult)
 import Shared.State
 import Routes.Main exposing (goToRoute)
 import Routes.Route exposing (Route (..), AuthRoute (..))
+import Styles
 
 type alias Model = {}
 
@@ -27,4 +28,4 @@ update _ model { navigationKey } = UpdateResult
 
 view : Model -> Html Msg
 view _ =
-  button [onClick Logout] [text "Logout"]
+  Styles.absoluteButton [ onClick Logout ] [ text "Logout" ]

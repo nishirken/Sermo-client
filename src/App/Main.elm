@@ -7,19 +7,19 @@ import Auth.Logout as Logout
 import App.Models.User exposing (User)
 import App.TextArea as TextArea
 import App.FriendsList as FriendsList
-import App.Chat as Chat
+import App.Messages as Messages
 import App.Queries.User as UserQuery
 import Html.Styled exposing (Html, toUnstyled, div, text, map)
 import Task
 import Shared.Update exposing (Update, UpdateResult)
 import Shared.State
-import Styles
+import App.Styles as AppStyles
 
 type alias Model =
   { user : User
   , error : String
   , logoutModel : Logout.Model
-  , chatModel : Chat.Model
+  , messagesModel : Messages.Model
   , friendsListModel : FriendsList.Model
   , textAreaModel : TextArea.Model
   }
@@ -28,7 +28,7 @@ initialModel =
   { user = User 0 "" []
   , error = ""
   , logoutModel = Logout.initialModel
-  , chatModel = Chat.initialModel
+  , messagesModel = Messages.initialModel
   , friendsListModel = FriendsList.initialModel
   , textAreaModel = TextArea.initialModel
   }
@@ -39,7 +39,7 @@ type Msg
   = DataReceived (Result Http.Error (Maybe User))
   | LogoutMsg Logout.Msg
   | FriendsListMsg FriendsList.Msg
-  | ChatMsg Chat.Msg
+  | MessagesMsg Messages.Msg
   | TextAreaMsg TextArea.Msg
 
 update : Update Msg Model
@@ -65,14 +65,11 @@ loadUser { userId, token } = case userId of
   Nothing -> Cmd.none
 
 view : Model -> Html Msg
-view { logoutModel, friendsListModel, chatModel, textAreaModel } = div []
-  [ Styles.title [] [text "Application"]
-  , Styles.appContainer []
-    [ div [] [map FriendsListMsg (FriendsList.view friendsListModel)]
-    , div []
-      [ map ChatMsg (Chat.view chatModel)
-      , map TextAreaMsg (TextArea.view textAreaModel)
-      ]
+view { logoutModel, friendsListModel, messagesModel, textAreaModel } = AppStyles.appContainer []
+  [ map FriendsListMsg (FriendsList.view friendsListModel)
+  , AppStyles.chatContainer []
+    [ map MessagesMsg (Messages.view messagesModel)
+    , map TextAreaMsg (TextArea.view textAreaModel)
     ]
   , map LogoutMsg (Logout.view logoutModel)
   ]

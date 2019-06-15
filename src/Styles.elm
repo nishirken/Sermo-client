@@ -115,5 +115,5 @@ globalStyles = CssGlobal.global
     , displayFlex
     ]
   , CssGlobal.selector "a" [ color inherit, textDecoration none ]
-  , CssGlobal.selector "*" [ boxSizing borderBox ]
+  , CssGlobal.selector "*" [ boxSizing borderBox, margin <| px 0, padding <| px 0 ]
   ]
