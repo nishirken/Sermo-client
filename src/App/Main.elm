@@ -9,7 +9,6 @@ import App.TextArea as TextArea
 import App.FriendsList as FriendsList
 import App.Chat as Chat
 import App.Queries.User as UserQuery
-import App.Styles as Styles
 import Html.Styled exposing (Html, toUnstyled, div, text, map)
 import Task
 import Shared.Update exposing (Update, UpdateResult)
@@ -69,8 +68,8 @@ view : Model -> Html Msg
 view { logoutModel, friendsListModel, chatModel, textAreaModel } = div []
   [ Styles.title [] [text "Application"]
   , Styles.appContainer []
-    [ Styles.friendsListContainer [] [map FriendsListMsg (FriendsList.view friendsListModel)]
-    , Styles.chatContainer []
+    [ div [] [map FriendsListMsg (FriendsList.view friendsListModel)]
+    , div []
       [ map ChatMsg (Chat.view chatModel)
       , map TextAreaMsg (TextArea.view textAreaModel)
       ]

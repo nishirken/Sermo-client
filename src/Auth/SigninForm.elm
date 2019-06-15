@@ -47,10 +47,10 @@ update msg model { navigationKey } =
 
 view : AuthCommon.InFormModel -> Html AuthCommon.InFormMsg
 view model =
-  div [] [
-    Styles.title [] [ text "Signin" ]
+  AuthStyles.formContainer [] [
+    AuthStyles.formTitle [] [ text "Signin" ]
     , AuthStyles.formRow [] [ AuthCommon.formInput "email" "email" model.email AuthCommon.Email ]
     , AuthStyles.formRow [] [ AuthCommon.formInput "password" "password" model.password AuthCommon.Password ]
-    , AuthStyles.formRow [] [ Styles.styledButton [ onClick AuthCommon.Send ] [text "signin"] ]
+    , AuthStyles.formRow [] [ AuthStyles.submitButton [ onClick AuthCommon.Send ] [text "Signin"] ]
     , Styles.errorTitle [] [ text model.error ]
     ]

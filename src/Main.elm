@@ -14,6 +14,7 @@ import Browser.Navigation exposing (Key)
 import LocalStorage
 import Shared.Update exposing (Update, UpdateResult)
 import Shared.State
+import Styles
 
 type alias Model =
   { token : String
@@ -102,12 +103,14 @@ updatePage msg model = let { pagesModel, sharedModel } = model in
 view : Model -> Browser.Document Msg
 view { pagesModel, sharedModel } =
   { title = "Sermo"
-  , body = List.map toUnstyled [
-      div [] [
-        case sharedModel.currentRoute of
+  , body = List.map toUnstyled
+    [ Styles.appContainer []
+      [ case sharedModel.currentRoute of
           Route.Auth _ -> map (PageMsg << AuthMsg) (Auth.view pagesModel.authModel sharedModel)
           Route.Application -> map (PageMsg << AppMsg) (App.view pagesModel.appModel)
-          Route.NotFound -> div [] [text "404 Not found"]  
-        ]
+          Route.NotFound -> div [] [text "404 Not found"]
+      , Styles.logoBackdrop [] []
+      ]
+    , Styles.globalStyles
     ]
   }

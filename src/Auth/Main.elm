@@ -7,11 +7,10 @@ import Json.Encode as JsonEncode
 import Html.Styled exposing (div, Html, toUnstyled, map)
 import Html.Styled.Attributes exposing (style)
 import Auth.Common as AuthCommon
-import Auth.SigninButton
 import Auth.SigninForm
 import Auth.LoginForm
-import Auth.LoginButton
 import Auth.Logout
+import Auth.Buttons
 import Common
 import Routes.Main as Routes
 import Routes.Route as Route
@@ -73,8 +72,8 @@ form { loginModel, signinModel } authRoute = case authRoute of
 authButton : Route.AuthRoute -> Html Msg
 authButton route =
   case route of
-    Route.Login -> Auth.SigninButton.view
-    Route.Signin -> Auth.LoginButton.view
+    Route.Login -> Auth.Buttons.signinButton
+    Route.Signin -> Auth.Buttons.loginButton
 
 view : Model -> Shared.State.Model -> Html Msg
 view model { currentRoute } =
